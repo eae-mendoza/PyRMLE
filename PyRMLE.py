@@ -684,6 +684,8 @@ def plot_rmle(f,step_size=None,dim=None,grid_lims=None):
 	if f_dim == 2:
 		if not grid_lims and not step_size:
 			plt.contour(f)
+		elif not grid_lims and step_size is not None:
+			print('"grid_lims" is a necessary argument if step_size is supplied, consider using the same axis limits used in estimation')
 		else:
 			if not step_size:
 				X=np.arange(grid_lims[0],grid_lims[1],0.25)
@@ -704,6 +706,8 @@ def plot_rmle(f,step_size=None,dim=None,grid_lims=None):
 			plt.show()
 			plt.contour(f12,colors='black')
 			plt.show()
+		elif not grid_lims and step_size is not None:
+			print('"grid_lims" is a necessary argument if step_size is supplied, consider using the same axis limits used in estimation')
 		else:
 			if not step_size:
 				f01=np.sum(f,axis=1)*0.5
