@@ -676,3 +676,57 @@ def rmle_2d(functional,alpha,trans_matrix,step_size,jacobian=None,initial_guess=
     result = scop.minimize(functional,initial_guess,args=(alpha,n,trans_matrix_long,step_size),method='trust-constr',jac=jacobian,hess=hessian_method,constraints=[constraints],tol=tolerance,options={'verbose': 1,'maxiter': max_iter},bounds=bound)
     return result
 
+def plot_rmle(f,step_size=None,dim=None,grid_lims=None):
+	if not dim:
+		f_dim = len(np.shape(f))
+	else:
+		f_dim = dim
+	if f_dim == 2:
+		if not grid_lims and not step_size:
+			plt.contour(f)
+		else:
+			if not step_size:
+				X=np.arange(grid_lims[0],grid_lims[1],0.25)
+				Y=np.arange(grid_lims[0],grid_lims[1],0.25)
+				plt.contour(X,Y,f,colors='black')
+			else:
+				X=np.arange(grid_lims[0],grid_lims[1],step_size)
+				Y=np.arange(grid_lims[0],grid_lims[1],step_size)
+				plt.contour(X,Y,f,colors='black')
+	else:
+		if not grid_lims and not step_size:
+			f01=np.sum(f,axis=1)
+			f02=np.sum(f,axis=2)
+			f12=np.sum(f,axis=0)
+			plt.contour(f01,colors='black')
+			plt.show()
+			plt.contour(f02,colors='black')
+			plt.show()
+			plt.contour(f12,colors='black')
+			plt.show()
+		else:
+			if not step_size:
+				f01=np.sum(f,axis=1)*0.5
+				f02=np.sum(f,axis=2)*0.5
+				f12=np.sum(f,axis=0)*0.5
+				X=np.arange(grid_lims[0],grid_lims[1],0.5)
+				Y=np.arange(grid_lims[0],grid_lims[1],0.5)
+				plt.contour(X,Y,f01,colors='black')
+				plt.show()
+				plt.contour(X,Y,f02,colors='black')
+				plt.show()
+				plt.contour(X,Y,f12,colors='black')
+				plt.show()
+			else:
+				f01=np.sum(f,axis=1)*step_size
+				f02=np.sum(f,axis=2)*step_size
+				f12=np.sum(f,axis=0)*step_size
+				X=np.arange(grid_lims[0],grid_lims[1],step_size)
+				Y=np.arange(grid_lims[0],grid_lims[1],step_size)
+				plt.contour(X,Y,f01,colors='black')
+				plt.show()
+				plt.contour(X,Y,f02,colors='black')
+				plt.show()
+				plt.contour(X,Y,f12,colors='black')
+				plt.show()
+			
