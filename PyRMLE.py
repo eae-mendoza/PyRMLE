@@ -29,6 +29,9 @@ from timeit import default_timer as timer
 from matplotlib.lines import Line2D
 
 def ransample_bivar(n,pi,mu,sigma):
+	""" Generates a bivariate sample from a mixed multivariate normal distribution """
+	""" n is the sample size, mu and sigma are the parameters of the distribution, and pi is the
+	weighting"""
     x=np.zeros((n))
     y=np.zeros((n))
     k=np.random.choice(len(pi),n,p=pi,replace=True)
@@ -37,6 +40,7 @@ def ransample_bivar(n,pi,mu,sigma):
     return x,y
 
 def dt_mtx(a,b,discretezation):
+	""" Generates the discretization grid on which the function will be estimated over """
     x1=np.arange(a,b,discretezation)
     x2=np.arange(a,b,discretezation)
     coord_mtx=np.zeros((len(x1),len(x2),2))
@@ -45,6 +49,7 @@ def dt_mtx(a,b,discretezation):
     return coord_mtx
 
 def sim_sample1d(n,x_params=None,beta_params=None):
+	""" Generates a simulated sample if the user wishes to run test examples """
 	if not x_params:
 		x_params = [0,1]
 	else:
@@ -69,6 +74,7 @@ def sim_sample1d(n,x_params=None,beta_params=None):
 	return xy_sample
 
 def filt(start,end,step,array):
+	""" Filteres the beta intersection points to remove redundant points"""
     t=array[:,0]>=start
     array=array[t]
     t1=array[:,0]<=end-step
@@ -80,9 +86,11 @@ def filt(start,end,step,array):
     return array
 
 def dist_xy(p1,p2):
+	""" Calculates distance between intersection points """
     return np.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2)
 
 def filt2(array,slope):
+	""" Further reduces redundant intersection points """
     n=len(array)
     if (slope[1]<=0 and slope[0]>=0) or (slope[1]>=0 and slope[0]<=0):
         return array[1:n]
@@ -94,6 +102,7 @@ def box_avg(grid,i,j):
     return avg/4
 
 def which_Bi(point,Bi_grid):
+	""" Identifies """
     if len(b1s[b1s<point[0]])>0: 
         i=len(b1s[b1s<point[0]])-1
     else:
@@ -104,16 +113,14 @@ def which_Bi(point,Bi_grid):
         j=0
     return Bi_grid[i][j]
 
-def likelihood_wrapper(f0,sample,b1s,b0s,start,end):
-    fs=np.array([f_yx_test(f0,i[0],i[1],b1s,b0s,start,end) for i in sample])
-    return -sum(np.log(fs))
-
-
 def big_L(sample_size,k):
+	""" Initializes the transformation matrix """
     coord_mtx=np.zeros((sample_size,k))
     return coord_mtx
 
 def which_ij(point,slope):
+	""" Returns indices of intersection point """
+	""" Output is used in creating the transformation matrix """
     if (slope[1]<=0 and slope[0]>=0) or (slope[1]>=0 and slope[0]<=0):
         if len(b1s[b1s<point[0]])>0: 
             i=len(b1s[b1s<point[0]])-1
@@ -136,10 +143,12 @@ def which_ij(point,slope):
         return i,j
 
 def index_conv(ijs,k):
+	""" Converts the index tuple into a vector index"""
     val=np.array([x[1]*np.sqrt(k)+x[0] for x in ijs])
     return val
 
 def get_intervals(xi,yi):
+	""" Computes for segment length for use in the finite volume approximation of the integral """
     if xi[1]!= 0 and xi[0]!=0:
         b0=(yi-b1s*xi[1])/xi[0]
         b1=(yi-b0s*xi[0])/xi[1]
@@ -160,6 +169,7 @@ def get_intervals(xi,yi):
     return intervals
 
 def get_intersections(xi,yi):
+	""" Computes for intersection points on the grid """
     if xi[1]!= 0 and xi[0]!=0:
         b0=(yi-b1s*xi[1])/xi[0]
         b1=(yi-b0s*xi[0])/xi[1]
@@ -180,6 +190,7 @@ def get_intersections(xi,yi):
     return reduced_b1b0
 
 def create_L(sample,f_dimension):
+	""" Constructs the transformation matrix """
     L=big_L(len(sample),f_dimension)
     for n in range(0,len(sample)):
         intervals=get_intervals(sample[n],sample[n][2])
@@ -191,11 +202,13 @@ def create_L(sample,f_dimension):
     return L
 
 def likelihood_l(f,L):
+	""" Likelihood function without regularization"""
     f[f<0]=10**-16
     val=np.log(np.dot(L,f))
     return -sum(val)
     
 def no_penal(f,n,L_mat_long):
+	""" Likelihood function without regularization"""
 	import numpy as np
 	L_mat=L_mat_long.reshape(n,len(f))
 	f[f<0]=10**-6
@@ -204,6 +217,7 @@ def no_penal(f,n,L_mat_long):
 
 
 def norm2_penal(f,alpha,n,L_mat_long,step):
+	""" Likelihood function with a 2-norm penalty """
 	import numpy as np
 	L_mat=L_mat_long.reshape(n,len(f))
 	f[f<0]=10**-6
@@ -211,6 +225,7 @@ def norm2_penal(f,alpha,n,L_mat_long,step):
 	return -sum(val)/n+ alpha*step**2*sum(f**2)
 
 def sobolev_norm_penal(f,alpha,n,L_mat_long,step):
+	""" Likelihood function with the sobolev norm for H1 penalty """
     import numpy as np
     L_mat=L_mat_long.reshape(n,len(f))
     f[f<0]=10**-6
@@ -218,6 +233,7 @@ def sobolev_norm_penal(f,alpha,n,L_mat_long,step):
     return -sum(val)/n + alpha*step**2*sum(f**2)+alpha*step**2*norm_fprime(f,step)
 
 def entropy_penal(f,alpha,n,L_mat_long,step):
+	""" Likelihood function with entropy penalty """
 	import numpy as np
 	L_mat=L_mat_long.reshape(n,len(f))
 	f[f<0]=10**-6
@@ -242,12 +258,14 @@ def tot_deriv(f,step):
 	return np.ravel((np.sqrt(fgrad[0]**2+fgrad[1]**2)))
 
 def norm_fprime(f,step):
+	""" Computes for the norm of the first derivative of the function being estimated """
 	import numpy as np
 	f=f.reshape(int(np.sqrt(len(f))),int(np.sqrt(len(f))))
 	fgrad=np.gradient(f,step)
 	return sum(np.ravel((fgrad[0]**2+fgrad[1]**2)))
 
 def second_deriv(f,step):
+	""" Computes for the second derivative of the function being estimated """
 	import numpy as np
 	f=f.reshape(int(np.sqrt(len(f))),int(np.sqrt(len(f))))
 	fgrad0=np.ravel(np.gradient(np.gradient(f,step)[0],step)[0])
@@ -255,6 +273,7 @@ def second_deriv(f,step):
 	return fgrad0+fgrad1
 
 def jac_no_penal(f,n,L_mat_long):
+	""" Jacobian of the functional with no regularization """
 	import numpy as np
 	L_mat=L_mat_long.reshape(n,len(f))
 	denom=np.dot(L_mat,f)
@@ -263,6 +282,7 @@ def jac_no_penal(f,n,L_mat_long):
 
 
 def jac_norm2_penal(f,alpha,n,L_mat_long,step):
+	""" Jacobian of the functional with a 2-norm penalty """
 	import numpy as np
 	L_mat=L_mat_long.reshape(n,len(f))
 	denom=np.dot(L_mat,f)
@@ -275,6 +295,7 @@ def jac_norm2_penal(f,alpha,n,L_mat_long,step):
     return -val.T.sum(axis=0)/n+alpha*step**2*2*f+2*alpha*step**2*second_deriv(f)"""
 
 def jac_sobolev_norm_penal(f,alpha,n,L_mat_long,step):
+	""" Jacobian of the functional with the sobolev penalty """
 	import numpy as np
 	L_mat=L_mat_long.reshape(n,len(f))
 	denom=np.dot(L_mat,f)
@@ -282,17 +303,20 @@ def jac_sobolev_norm_penal(f,alpha,n,L_mat_long,step):
 	return -val.T.sum(axis=0)/n-2*alpha*step**2*second_deriv(f,step)
 
 def jac_entropy_penal(f,alpha,n,L_mat_long,step):
+	""" Jacobian of the functional with entropy penalty """
 	import numpy as np
 	L_mat=L_mat_long.reshape(n,len(f))
 	denom=np.dot(L_mat,f)
 	val=L_mat.T/denom
 	return -val.T.sum(axis=0)/n+alpha*step**2*(np.log(f)+1)
 
-def ise(f1,f2):
+def ise(f1,f2,step_size):
+	""" Computes for the integrated squared error between two functions """
     val=np.linalg.norm(f1-f2)**2
-    return len(f1)**-1*step**2*val
+    return len(f1)**-1*step_size**2*val
 
 def prop_noise(alpha,n,C):
+	""" Estimate for upper limit of variance in the implementation of Lepskii's principle"""
     val=C*alpha**-1*n**-1.5
     return val
 
@@ -303,6 +327,9 @@ def get_int(x):
         return x[-1]
 
 def rmle_1d(functional,alpha,trans_matrix,step_size,jacobian=None,initial_guess=None,hessian_method=None,constraints=None,tolerance=None,max_iter=None,bounds=None):
+	""" Wrapper function for the minimization function from scipy.optimize """
+	""" Passes the functional of choice to the minimization algorithm along with the matching jacobian """
+	""" Returns the estimate for f_hat """
     n=len(trans_matrix)
     m=len(np.transpose(trans_matrix))
     trans_matrix_long = np.ravel(trans_matrix)
@@ -347,7 +374,8 @@ def rmle_1d(functional,alpha,trans_matrix,step_size,jacobian=None,initial_guess=
 
 #2-D functions
 
-def vertices(n,k,step_size): #n is the box index
+def vertices(n,k,step_size):
+	""" Returns all vertices of a particular grid-box """
     import itertools
     vertex_dir = list(itertools.product([0,1],repeat=3))
     initialization = np.array(vertex_dir)*step_size - np.floor(np.ceil(k**(1/3))/2)*step_size
@@ -359,20 +387,24 @@ def vertices(n,k,step_size): #n is the box index
     return vertices
 
 def edge_check(p,start,end):
+	""" Returns a truth-value for wether a point is on an edge and not a vertex""" 
     check=[]
     for i in p:
         check.append((abs(i)-abs(start))==0 or (abs(i)-abs(start))==abs(abs(end)-abs(start)))
     return check
 
 def outer_edge_check(p,start,end):
+	""" Returns a value that determines if a point lies on an outer-edge"""
     return (abs(p)-abs(start))==0 or (abs(p)-abs(start))==abs(abs(end)-abs(start))
 
 def is_point_vertex(point,step_size):
+	""" Returns a value that determines if a point is a vertex """
     check = point%step_size
     bools = check == 0
     val = sum(bools)
     return val==3
 def is_point_in_box(point,vertices,interval):
+	""" Returns value that determines which boxes a point lies in"""
     #possible time save is to limit the search range
     vert_point = vertices - point
     bools = vert_point == 0
@@ -384,6 +416,7 @@ def is_point_in_box(point,vertices,interval):
     val = sum(np.array(sums)>0) < 2 and sum(np.array(sums)>0) >0
     return val
 def get_all_box_vertex(point,vertex_collection,interval):
+	""" Returns all vertices of the boxes where a point is located at """
     #possible time save is to limit the search range
     vert_point = vertex_collection - point
     bools =  vert_point == 0
@@ -403,7 +436,8 @@ def get_all_box(point,vertex_collection,interval,step_size):
 def search_range(index,n,k):
     val = k >=  max(0, index - 2*k**(2/3)) and k <= index +2*k**(2/3)
     return val
-def get_index(point,interval,k):
+
+"""def get_index(point,interval,k):
     x=[]
     for p in point:
         x.append(max(np.where(interval>=p)[0][0]-1,0))
@@ -418,18 +452,22 @@ def get_index(point,interval,k):
         for p in point:
             x.append(max(np.where(interval>=p)[0][0],0))
     index = x[0] + x[1]*k**(1/3) + x[2]*k**(2/3)
-    return np.ceil(index)
+    return np.ceil(index)"""
+
 def get_index(point,interval,k):
+	""" Returns index of point in the grid """
     x=[]
     for p in point:
         x.append(max(np.where(interval>=p)[0][0]-1,0))
     index = x[0] + x[1]*k**(1/3) + x[2]*k**(2/3)
     return np.ceil(index)
-def point_gen(n):
+"""def point_gen(n):
     x0 = np.random.uniform(-1,1,n)
     x1 = np.random.choice(np.arange(-1,1,0.25),n)
-    x2 = np.random.choice(np.arange(-1,1,0.25),n)
+    x2 = np.random.choice(np.arange(-1,1,0.25),n)"""
+
 def get_box_index(point,start,end,step_size,interval,ks):
+	""" Returns the indices of the boxes that contain a point """
     if (sum((abs(point)-abs(start))==0) == 3 or sum((abs(point)-abs(end))==0) == 3): #case for outer-vertex
         indices = np.array([get_index(point,interval,ks[2])],dtype=int) 
         return list(indices)
@@ -512,6 +550,7 @@ def get_box_index(point,start,end,step_size,interval,ks):
             return list(indices+adjustments)
 
 def angle(v1,v2):
+	""" Returns the angle between two vectors """
     dot = np.dot(v1[0:2],v2[0:2])
     det = v1[0]*v2[1] - v1[1]*v2[0]
     temp_cos = dot/np.linalg.norm(v1[0:2])/np.linalg.norm(v2[0:2])
@@ -527,6 +566,7 @@ def angle(v1,v2):
 
 
 def point_sorter(points):
+	""" Returns sorted points to be used in solving for the area of the polygonal intersection """
     cent = sum(points)/len(points)
     vects = cent - points
     projs = [i[0:2] for i in vects]
@@ -541,12 +581,14 @@ def point_sorter(points):
     return sorted_points
 
 def area_poly(points):
+	""" Returns the area of the polygon defined by the points """
     area = 0.5 * abs(points[0][0] * points[-1][1] - points[0][1] * points[-1][0])
     for i in range(len(points) - 1):
         area += 0.5 * abs(points[i][0] * points[i + 1][1] - points[i][1] * points[i + 1][0])
     return area
 
 def ransample(n,pi,mu,sigma):
+	""" Returns a multivariate sample from a random multivariante normal with different weights """
     x=np.zeros((n))
     y=np.zeros((n))
     z=np.zeros((n))
@@ -556,10 +598,12 @@ def ransample(n,pi,mu,sigma):
     return x,y,z
 
 def big_L2d(sample_size,k):
+	""" Returns an initialization of the transformation matrix """
     coord_mtx=np.zeros((sample_size,k))
     return coord_mtx
 
 def create_L2d(sample,f_dimension,start,end,step,interval,ks):
+	""" Returns the transformation matrix obtained from the sample """
     L=big_L2d(len(sample),f_dimension)
     b0s=interval
     b1s=interval
@@ -611,6 +655,7 @@ def create_L2d(sample,f_dimension,start,end,step,interval,ks):
     return L
 
 def second_deriv_3d(f,step):
+	""" Returns the second derivative of the function being estimated """
     f=f+10e-3
     f=f.reshape(int(np.ceil(len(f)**(1/3))),int(np.ceil(len(f)**(1/3))),int(np.ceil(len(f)**(1/3))))
     fgrad0=np.ravel(np.gradient(np.gradient(f,step)[0],step)[0])
@@ -619,6 +664,7 @@ def second_deriv_3d(f,step):
     return fgrad0+fgrad1+fgrad2
 
 def sobolev_norm_penal2d(f,alpha,n,L_mat_long,step):
+	""" Returns the functional with sobolev norm for H1 as a regularization term """
     import numpy as np
     L_mat=L_mat_long.reshape(n,len(f))
     f[f<0]=0
@@ -627,11 +673,13 @@ def sobolev_norm_penal2d(f,alpha,n,L_mat_long,step):
     return -sum(val)/n + alpha*step**3*sum(f**2)+alpha*step**3*norm_fprime_3d(f,step)
 
 def norm_fprime_3d(f,step):
+	""" Returns the norm of the first derivative of the function being estimated """
     f=f.reshape(int(np.ceil(len(f)**(1/3))),int(np.ceil(len(f)**(1/3))),int(np.ceil(len(f)**(1/3))))
     fgrad=np.gradient(f,step)
     return sum(np.ravel((fgrad[0]**2+fgrad[1]**2+fgrad[2]**2)))
 
 def jac_sobolev_penal2d(f,alpha,n,L_mat_long,step):
+	""" Returns the Jacobian of the functional with the sobolev norm for H1 penalty """
     import numpy as np
     f=f+10e-3
     L_mat=L_mat_long.reshape(n,len(f))
@@ -640,6 +688,7 @@ def jac_sobolev_penal2d(f,alpha,n,L_mat_long,step):
     return -val.T.sum(axis=0)/n+alpha*step**3*2*f-2*alpha*step**3*second_deriv_3d(f,step)
 
 def rmle_2d(functional,alpha,trans_matrix,step_size,jacobian=None,initial_guess=None,hessian_method=None,constraints=None,tolerance=None,max_iter=None,bounds=None):
+	""" Wrapper function for the scipy minimize function """
     n=len(trans_matrix)
     m=len(np.transpose(trans_matrix))
     trans_matrix_long = np.ravel(trans_matrix)
@@ -677,6 +726,7 @@ def rmle_2d(functional,alpha,trans_matrix,step_size,jacobian=None,initial_guess=
     return result
 
 def plot_rmle(f,step_size=None,dim=None,grid_lims=None):
+	""" Returns contour plots of the function estimated"""
 	if not dim:
 		f_dim = len(np.shape(f))
 	else:
