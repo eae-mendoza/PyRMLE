@@ -27,6 +27,7 @@ import random
 import string
 from timeit import default_timer as timer
 from matplotlib.lines import Line2D
+from decimal import Decimal
 
 def ransample_bivar(n,pi,mu,sigma):
     """ Generates a bivariate sample from a mixed multivariate normal distribution """
@@ -385,8 +386,9 @@ def rmle_1d(functional,alpha,trans_matrix,step_size,jacobian=None,initial_guess=
 
 #2-D functions
 
-def vertices(n,k,step_size):
-    """ Returns all vertices of a particular grid-box """
+#2-D functions
+
+def vertices(n,k,step_size): #n is the box index
     import itertools
     vertex_dir = list(itertools.product([0,1],repeat=3))
     initialization = np.array(vertex_dir)*step_size - np.floor(np.ceil(k**(1/3))/2)*step_size
@@ -397,25 +399,25 @@ def vertices(n,k,step_size):
     vertices = initialization + step_size*adjustment
     return vertices
 
+def conv_dec(p):
+    from decimal import Decimal
+    p=np.array([Decimal(str(i)) for i in p])
+    return p
 def edge_check(p,start,end):
-    """ Returns a truth-value for wether a point is on an edge and not a vertex""" 
     check=[]
     for i in p:
-        check.append((abs(i)-abs(start))==0 or (abs(i)-abs(start))==abs(abs(end)-abs(start)))
+        check.append((abs(i)-abs(end))==0 or (abs(i)-abs(start))==0 or (abs(i)-abs(start))==abs(abs(end)-abs(start)) or (abs(i)-abs(end))==abs(abs(end)-abs(start)))
     return check
 
 def outer_edge_check(p,start,end):
-    """ Returns a value that determines if a point lies on an outer-edge"""
-    return (abs(p)-abs(start))==0 or (abs(p)-abs(start))==abs(abs(end)-abs(start))
+    return (abs(p)-abs(end))==0 or (abs(p)-abs(start))==0 or (abs(p)-abs(start))==abs(abs(end)-abs(start) or (abs(p)-abs(end))==abs(abs(end)-abs(start)))
 
 def is_point_vertex(point,step_size):
-    """ Returns a value that determines if a point is a vertex """
     check = point%step_size
     bools = check == 0
     val = sum(bools)
     return val==3
 def is_point_in_box(point,vertices,interval):
-    """ Returns value that determines which boxes a point lies in"""
     #possible time save is to limit the search range
     vert_point = vertices - point
     bools = vert_point == 0
@@ -427,7 +429,6 @@ def is_point_in_box(point,vertices,interval):
     val = sum(np.array(sums)>0) < 2 and sum(np.array(sums)>0) >0
     return val
 def get_all_box_vertex(point,vertex_collection,interval):
-    """ Returns all vertices of the boxes where a point is located at """
     #possible time save is to limit the search range
     vert_point = vertex_collection - point
     bools =  vert_point == 0
@@ -447,8 +448,8 @@ def get_all_box(point,vertex_collection,interval,step_size):
 def search_range(index,n,k):
     val = k >=  max(0, index - 2*k**(2/3)) and k <= index +2*k**(2/3)
     return val
-
-"""def get_index(point,interval,k):
+def get_index(point,interval,k):
+    interval_round=np.array([round(i,12) for i in interval])
     x=[]
     for p in point:
         x.append(max(np.where(interval>=p)[0][0]-1,0))
@@ -463,64 +464,74 @@ def get_index(point,interval,k):
         for p in point:
             x.append(max(np.where(interval>=p)[0][0],0))
     index = x[0] + x[1]*k**(1/3) + x[2]*k**(2/3)
-    return np.ceil(index)"""
+    return np.ceil(index)
 
 def get_index(point,interval,k):
-    """ Returns index of point in the grid """
+    interval_round=np.array([round(i,8) for i in interval])
     x=[]
     for p in point:
-        x.append(max(np.where(interval>=p)[0][0]-1,0))
+        x.append(max(np.where(interval_round>=p)[0][0]-1,0))
     index = x[0] + x[1]*k**(1/3) + x[2]*k**(2/3)
     return np.ceil(index)
-"""def point_gen(n):
+def point_gen(n):
     x0 = np.random.uniform(-1,1,n)
     x1 = np.random.choice(np.arange(-1,1,0.25),n)
-    x2 = np.random.choice(np.arange(-1,1,0.25),n)"""
+    x2 = np.random.choice(np.arange(-1,1,0.25),n)
+    
+def point_check(point,start,end):
+    check=0
+    for i in point:
+        if i == start or i == end:
+            check+=1
+    return check
 
 def get_box_index(point,start,end,step_size,interval,ks):
-    """ Returns the indices of the boxes that contain a point """
-    if (sum((abs(point)-abs(start))==0) == 3 or sum((abs(point)-abs(end))==0) == 3): #case for outer-vertex
+    point_dec=conv_dec(point)
+    step_size=conv_dec([step_size])[0]
+    start=conv_dec([start])[0]
+    end=conv_dec([end])[0]
+    if point_check(point_dec,start,end) ==3: #case for outer-vertex
         indices = np.array([get_index(point,interval,ks[2])],dtype=int) 
         return list(indices)
-    elif ((sum((abs(point)-abs(start))==0) == 2 or sum((abs(point)-abs(end))==0) == 2) and sum((point%step_size)==0)==3): 
+    elif ((point_check(point_dec,start,end) == 2) and sum((point_dec%step_size)==0)==3): 
         #case for corner-outer-edge vertex
-        if abs(point[1])-abs(start)==0 and abs(point[2])-abs(start)==0:
+        if (abs(point_dec[1])-abs(start)==0 and abs(point_dec[2])-abs(start)==0) or (abs(point_dec[1])-abs(end)==0 and abs(point_dec[2])-abs(end)==0):
             indices = np.array([get_index(point,interval,ks[2])] * 2,dtype=int)
             adjustments = np.array([0,1],dtype=int)
             return list(indices+adjustments)
-        elif  abs(point[0])-abs(start)==0 and abs(point[2])-abs(start)==0:
+        elif (abs(point_dec[0])-abs(start)==0 and abs(point_dec[2])-abs(start)==0) or (abs(point[0])-abs(end)==0 and abs(point_dec[2])-abs(end)==0):
             indices = np.array([get_index(point,interval,ks[2])] * 2,dtype=int)
             adjustments = np.array([0,ks[0]],dtype=int)
             return list(indices+adjustments) 
-        elif  abs(point[0])-abs(start)==0 and abs(point[1])-abs(start)==0:
+        elif (abs(point_dec[0])-abs(start)==0 and abs(point_dec[1])-abs(start)==0) or (abs(point_dec[0])-abs(end)==0 and abs(point_dec[1])-abs(end)==0):
             indices = np.array([get_index(point,interval,ks[2])] * 2,dtype=int)
             adjustments = np.array([0,ks[1]],dtype=int)
             return list(indices+adjustments)         
-    elif ((sum((abs(point)-abs(start))==0) == 1 or sum((abs(point)-abs(end))==0) == 1) and sum((point%step_size)==0)==3): 
+    elif ((sum((abs(point_dec)-abs(start))==0) == 1 or sum((abs(point_dec)-abs(end))==0) == 1) and sum((point_dec%step_size)==0)==3): 
         #case for side-outer-edge vertex
         #needs cases for different axes
-        if abs(point[1])-abs(start)==0:
+        if (abs(point_dec[1])-abs(start)==0) or (abs(point_dec[1])-abs(end)==0):
             indices = np.array([get_index(point,interval,ks[2])] * 4,dtype=int)
             adjustments = np.array([0,1,ks[1],ks[1]+1],dtype=int)
             return list(indices+adjustments)
-        elif abs(point[0])-abs(start)==0:
+        elif (abs(point_dec[0])-abs(start)==0) or (abs(point_dec[0])-abs(end)==0):
             indices = np.array([get_index(point,interval,ks[2])] * 4,dtype=int)
             adjustments = np.array([0,ks[0],ks[1],ks[1]+ks[0]],dtype=int)
             return list(indices+adjustments)
-        elif abs(point[2])-abs(start)==0:
+        elif abs(point_dec[2])-abs(start)==0:
             indices = np.array([get_index(point,interval,ks[2])] * 4,dtype=int)
             adjustments = np.array([0,1,ks[0],ks[0]+1],dtype=int)
             return list(indices+adjustments)
-    elif sum(point%step_size) == 0: #case for inner-vertex
+    elif sum(point_dec%step_size) == 0: #case for inner-vertex
         indices = np.array([get_index(point,interval,ks[2])] * 8,dtype=int)
         adjustments = np.array([0,1,ks[0],ks[0]+1,ks[1],ks[1]+1,+ks[0]+ks[1],ks[0]+ks[1]+1],dtype=int)
         return list(indices+adjustments)
-    elif sum(edge_check(point,start,end))==2: #case for outermost-edge
+    elif sum(edge_check(point_dec,start,end))==2: #case for outermost-edge
         indices = np.array([get_index(point,interval,ks[2])],dtype=int) 
         return list(indices)
-    elif (sum((abs(point)-abs(start))==0)==1 or sum((abs(point)-abs(end))==0)==1): #case for outer-edge
-        if outer_edge_check(point[1],start,end): #change logic
-            if point[0]%step_size==0 :
+    elif (sum((abs(point_dec)-abs(start))==0)==1 or sum((abs(point_dec)-abs(end))==0)==1): #case for outer-edge
+        if outer_edge_check(point_dec[1],start,end): #change logic
+            if point_dec[0]%step_size==0 :
                 indices = np.array([get_index(point,interval,ks[2])]*2,dtype=int)
                 adjustments = np.array([0,1])
                 return list(indices+adjustments)
@@ -528,8 +539,8 @@ def get_box_index(point,start,end,step_size,interval,ks):
                 indices = np.array([get_index(point,interval,ks[2])]*2,dtype=int)
                 adjustments = np.array([0,ks[1]])
                 return list(indices+adjustments)                
-        elif outer_edge_check(point[0],start,end):
-            if point[1]%step_size==0:
+        elif outer_edge_check(point_dec[0],start,end):
+            if point_dec[1]%step_size==0:
                 indices = np.array([get_index(point,interval,ks[2])]*2,dtype=int)
                 adjustments = np.array([0,ks[0]])
                 return list(indices+adjustments)
@@ -537,8 +548,8 @@ def get_box_index(point,start,end,step_size,interval,ks):
                 indices = np.array([get_index(point,interval,ks[2])]*2,dtype=int)
                 adjustments = np.array([0,ks[1]])
                 return list(indices+adjustments)  
-        elif outer_edge_check(point[2],start,end):
-            if point[0]%step_size==0:
+        elif outer_edge_check(point_dec[2],start,end):
+            if point_dec[0]%step_size==0:
                 indices = np.array([get_index(point,interval,ks[2])]*2,dtype=int)
                 adjustments = np.array([0,1])
                 return list(indices+adjustments)
@@ -546,22 +557,21 @@ def get_box_index(point,start,end,step_size,interval,ks):
                 indices = np.array([get_index(point,interval,ks[2])]*2,dtype=int)
                 adjustments = np.array([0,ks[0]])
                 return list(indices+adjustments)  
-    elif sum((point%step_size)==0)==2 : #case for inner-edge #needs more cases
-        if point[0]%step_size !=0:
+    elif sum((point_dec%step_size)==0)==2 : #case for inner-edge #needs more cases
+        if point_dec[0]%step_size !=0:
             indices = np.array([get_index(point,interval,ks[2])]*4,dtype=int)
             adjustments = np.array([0,ks[0],ks[1],ks[0]+ks[1]])
             return list(indices+adjustments)
-        elif point[1]%step_size !=0:
+        elif point_dec[1]%step_size !=0:
             indices = np.array([get_index(point,interval,ks[2])]*4,dtype=int)
             adjustments = np.array([0,1,ks[1],ks[1]+1])
             return list(indices+adjustments)
-        elif point[2]%step_size !=0:
+        elif point_dec[2]%step_size !=0:
             indices = np.array([get_index(point,interval,ks[2])]*4,dtype=int)
             adjustments = np.array([0,1,ks[0],ks[0]+1])
             return list(indices+adjustments)
 
 def angle(v1,v2):
-    """ Returns the angle between two vectors """
     dot = np.dot(v1[0:2],v2[0:2])
     det = v1[0]*v2[1] - v1[1]*v2[0]
     temp_cos = dot/np.linalg.norm(v1[0:2])/np.linalg.norm(v2[0:2])
@@ -577,7 +587,6 @@ def angle(v1,v2):
 
 
 def point_sorter(points):
-    """ Returns sorted points to be used in solving for the area of the polygonal intersection """
     cent = sum(points)/len(points)
     vects = cent - points
     projs = [i[0:2] for i in vects]
@@ -592,33 +601,30 @@ def point_sorter(points):
     return sorted_points
 
 def area_poly(points):
-    """ Returns the area of the polygon defined by the points """
     area = 0.5 * abs(points[0][0] * points[-1][1] - points[0][1] * points[-1][0])
     for i in range(len(points) - 1):
         area += 0.5 * abs(points[i][0] * points[i + 1][1] - points[i][1] * points[i + 1][0])
     return area
 
 def ransample(n,pi,mu,sigma):
-    """ Returns a multivariate sample from a random multivariante normal with different weights """
     x=np.zeros((n))
     y=np.zeros((n))
     z=np.zeros((n))
     k=np.random.choice(len(pi),n,p=pi,replace=True)
     for i in range(0,len(k)):
-        x[i],y[i],z[i]=np.random.multivariate_normal(mu[k[i]],sigma[k[i]],1).T
+        x[i],y[i],z[i]=np.random.multivariate_normal(mu[k[i]],cov[k[i]],1).T
     return x,y,z
 
 def big_L2d(sample_size,k):
-    """ Returns an initialization of the transformation matrix """
     coord_mtx=np.zeros((sample_size,k))
     return coord_mtx
 
 def create_L2d(sample,f_dimension,start,end,step,interval,ks):
-    """ Returns the transformation matrix obtained from the sample """
+    interval_round=np.array([round(i,8) for i in interval])
     L=big_L2d(len(sample),f_dimension)
-    b0s=interval
-    b1s=interval
-    b2s=interval
+    b0s=interval_round
+    b1s=interval_round
+    b2s=interval_round
     for n in range(0,len(sample)):
         b0_based_intersections = []
         b1_based_intersections = []
@@ -626,17 +632,17 @@ def create_L2d(sample,f_dimension,start,end,step,interval,ks):
         for i in b1s:
             for j in b2s:
                 b0_int = (xy_sample[n,3] - i*xy_sample[n,1] - j*xy_sample[n,2])/xy_sample[n,0]
-                if abs(b0_int) <= abs(start):
+                if b0_int >= start and b0_int <= end:
                     b0_based_intersections.append(tuple([b0_int,i,j]))
         for i in b0s:
             for j in b2s:
                 b1_int = (xy_sample[n,3] - i*xy_sample[n,0] - j*xy_sample[n,2])/xy_sample[n,1]
-                if abs(b1_int) <=  abs(start):
+                if b1_int >= start and b1_int <= end:
                     b1_based_intersections.append(tuple([i,b1_int,j]))
         for i in b0s:
             for j in b1s:
                 b2_int = (xy_sample[n,3] - i*xy_sample[n,0] - j*xy_sample[n,1])/xy_sample[n,2]
-                if abs(b2_int) <= abs(start):
+                if b2_int >= start and b2_int <= end:
                     b2_based_intersections.append(tuple([i,j,b2_int]))
         b0_based_intersections.extend(b1_based_intersections)
         b0_based_intersections.extend(b2_based_intersections)
@@ -644,7 +650,7 @@ def create_L2d(sample,f_dimension,start,end,step,interval,ks):
         intersect_points = list(set(intersection_points))
         test_list = [[] for i in range(0,ks[2])]
         for p in intersect_points:
-            indices=get_box_index(np.array(p),start,end,step,interval,ks)
+            indices=get_box_index(np.array(p),start,end,step,interval_round,ks)
             for i in indices:
                 test_list[i].append(np.array(p))
         areas = [[] for i in range(0,ks[2])]
@@ -666,7 +672,6 @@ def create_L2d(sample,f_dimension,start,end,step,interval,ks):
     return L
 
 def second_deriv_3d(f,step):
-    """ Returns the second derivative of the function being estimated """
     f=f+10e-3
     f=f.reshape(int(np.ceil(len(f)**(1/3))),int(np.ceil(len(f)**(1/3))),int(np.ceil(len(f)**(1/3))))
     fgrad0=np.ravel(np.gradient(np.gradient(f,step)[0],step)[0])
@@ -675,7 +680,6 @@ def second_deriv_3d(f,step):
     return fgrad0+fgrad1+fgrad2
 
 def sobolev_norm_penal2d(f,alpha,n,L_mat_long,step):
-    """ Returns the functional with sobolev norm for H1 as a regularization term """
     import numpy as np
     L_mat=L_mat_long.reshape(n,len(f))
     f[f<0]=0
@@ -684,13 +688,11 @@ def sobolev_norm_penal2d(f,alpha,n,L_mat_long,step):
     return -sum(val)/n + alpha*step**3*sum(f**2)+alpha*step**3*norm_fprime_3d(f,step)
 
 def norm_fprime_3d(f,step):
-    """ Returns the norm of the first derivative of the function being estimated """
     f=f.reshape(int(np.ceil(len(f)**(1/3))),int(np.ceil(len(f)**(1/3))),int(np.ceil(len(f)**(1/3))))
     fgrad=np.gradient(f,step)
     return sum(np.ravel((fgrad[0]**2+fgrad[1]**2+fgrad[2]**2)))
 
 def jac_sobolev_penal2d(f,alpha,n,L_mat_long,step):
-    """ Returns the Jacobian of the functional with the sobolev norm for H1 penalty """
     import numpy as np
     f=f+10e-3
     L_mat=L_mat_long.reshape(n,len(f))
@@ -699,18 +701,17 @@ def jac_sobolev_penal2d(f,alpha,n,L_mat_long,step):
     return -val.T.sum(axis=0)/n+alpha*step**3*2*f-2*alpha*step**3*second_deriv_3d(f,step)
 
 def rmle_2d(functional,alpha,trans_matrix,step_size,jacobian=None,initial_guess=None,hessian_method=None,constraints=None,tolerance=None,max_iter=None,bounds=None):
-    """ Wrapper function for the scipy minimize function """
     n=len(trans_matrix)
     m=len(np.transpose(trans_matrix))
     trans_matrix_long = np.ravel(trans_matrix)
     if not initial_guess:
-        initial_guess = np.zeros(m)+0.000001
+        initial_guess = np.zeros(m)+0.1
     else:
         initial_guess = initial_guess
     if not jacobian:
         if functional == sobolev_norm_penal2d:
             jacobian = jac_sobolev_penal2d
-        else:
+        else: 
             jacobian = jacobian
     if not hessian_method:
         hessian_method = '2-point'
