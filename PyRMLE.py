@@ -29,52 +29,196 @@ from timeit import default_timer as timer
 from matplotlib.lines import Line2D
 from decimal import Decimal
 
+class RMLEResult:
+    def __init__(self,f,alpha,alpmth,T,details):
+        self.f  = f
+        self.Tmat = T.Tmat
+        self.T = T
+        self.alpha = alpha
+        self.alpmth = alpmth
+        self.grid = self.T.grid
+        self.dim = self.T.grid.dim
+        self.details = details
+    def maxval(self):
+        mval = np.max(self.f)
+        i = int(np.where(self.f==np.max(self.f))[0])
+        if self.dim ==2:
+            k = self.grid.ks()[0]
+            x1=int(np.floor(i/k))
+            x2=int(i%k)
+            if x2 == 0:
+                loc=[(interval[x1-1],interval[-1])]
+                return [mval,loc]
+            else: 
+                loc=[(interval[x1],interval[x2])]
+                return [mval,loc]
+        else:
+            mval = np.max(self.f)
+            k = self.grid.ks()[0]
+            k2 = self.grid.ks()[1]
+            if i > 0:
+                x1=int(np.floor(int(i%k2)/k))
+                x2=int(i%k)
+                x3=int(np.floor(i/k2))
+                if x2 == 0:
+                    loc=[(interval[x1-1],interval[-1],interval[x3])]
+                    return [mval,loc]
+                else: 
+                    loc=[(interval[x1],interval[x2],interval[x3])]
+                    return [mval,loc]
+            else:
+                loc=[(interval[0],interval[0])]
+                return [mval,loc]
+    def mode(self):
+        modes=[]
+        interval = self.grid.interval
+        dim = self.grid.dim
+        if dim == 2:
+            k = int(len(self.f)**0.5)
+            neighbor_ks = [-1,1,-k,-(k+1),-(k-1),k,k-1,k+1]
+            for i in range(0,len(self.f)):
+                neighbors = []
+                for j in neighbor_ks:
+                    try:
+                        neighbors.append(self.f[i+j])
+                    except:
+                        pass
+                neighbors = np.array(neighbors)
+                val = sum(neighbors > self.f[i])
+                if val == 0:
+                    if i > 0:
+                        x1=int(np.floor(i/k))
+                        x2=int(i%k)
+                        if x2 == 0:
+                            loc=[(interval[x1-1],interval[-1])]
+                            modes.append([self.f[i],loc])
+                        else: 
+                            loc=[(interval[x1],interval[x2])]
+                            modes.append([self.f[i],loc])
+                    else:
+                        loc=[(interval[0],interval[0])]
+                        modes.append([self.f[i],loc])
+            modes.sort(reverse=True)
+            return modes[:6]
+        else:
+            k = int(np.ceil(len(self.f)**(1/3)))
+            k2 = int(k**2)
+            neighbor_ks = [-1,1,-k,-(k+1),-(k-1),k,k-1,k+1,-1-k2,1-k2,-k-k2,-(k+1)-k2,-(k-1)-k2,k-k2,k-1-k2,k+1-k2,-1+k2,1+k2,-k+k2,-(k+1)+k2,-(k-1)+k2,k+k2,k-1+k2,k+1+k2]
+            for i in range(0,len(self.f)):
+                neighbors = []
+                for j in neighbor_ks:
+                    try:
+                        neighbors.append(self.f[i+j])
+                    except:
+                        pass
+                neighbors = np.array(neighbors)
+                val = sum(neighbors > self.f[i])
+                if val == 0:
+                    if i > 0:
+                        x1=int(np.floor(int(i%k2)/k))
+                        x2=int(i%k)
+                        x3=int(np.floor(i/k2))
+                        if x2 == 0:
+                            loc=[(interval[x1-1],interval[-1],interval[x3])]
+                            modes.append([self.f[i],loc])
+                        else: 
+                            loc=[(interval[x1],interval[x2],interval[x3])]
+                            modes.append([self.f[i],loc])
+                    else:
+                        loc=[(interval[0],interval[0])]
+                        modes.append([self.f[i],loc])
+            modes.sort(reverse=True)
+            return modes[:6]
+    def ev(self):
+        new_interval = [(self.grid.interval[i-1]+self.grid.interval[i])/2 for i in range(1,len(self.grid.interval))]
+        expected_vals = []
+        m = self.grid.ks()[0]
+        f = self.f
+        step = self.grid.step
+        if self.dim == 2:
+            f_shaped = f.reshape(m,m)
+            expected_vals.append(sum(np.sum(f_shaped,axis=1)*new_interval*step**2))
+            expected_vals.append(sum(np.sum(f_shaped,axis=0)*new_interval*step**2))
+            return expected_vals
+        elif self.dim == 3:
+            f_shaped = f.reshape(m,m,m)
+            f01=np.sum(f_shaped,axis=2)*step
+            f12=np.sum(f_shaped,axis=0)*step
+            f02=np.sum(f_shaped,axis=1)*step
+            expected_vals.append(sum(np.sum(f01,axis=1)*new_interval*step_size**2))
+            expected_vals.append(sum(np.sum(f12,axis=1)*new_interval*step_size**2))
+            expected_vals.append(sum(np.sum(f02,axis=0)*new_interval*step_size**2))
+            return expected_vals
+        
+class transmatrix:
+    def __init__(self,Tmat,grid):
+        self.Tmat  = Tmat
+        self.grid = grid
+    def n(self):
+        return len(self.Tmat)
+    def m(self):
+        return len(self.Tmat.T)
+ class grid: 
+    def __init__(self,interval,dim,step,start,end):
+        self.interval = interval
+        self.dim = dim
+        self.step = step
+        self.start = start
+        self.end = end
+    def ks(self):
+        k = []
+        m = len(self.interval)
+        for i in range(0,self.dim):
+            k.append(int((m-1)**(i+1)))
+        return k
+    def numgridpoints(self):
+        return (len(self.interval)-1)**self.dim
+
+def grid_set(start,end,step,dim):
+    interval=np.arange(start,end+step,step)
+    return grid(interval=interval,dim=dim,step=step,start=start,end=end)
+
 def ransample_bivar(n,pi,mu,sigma):
-    """ Generates a bivariate sample from a mixed multivariate normal distribution """
-    """ n is the sample size, mu and sigma are the parameters of the distribution, and pi is the weighting"""
     x=np.zeros((n))
     y=np.zeros((n))
     k=np.random.choice(len(pi),n,p=pi,replace=True)
     for i in range(0,len(k)):
-        x[i],y[i]=np.random.multivariate_normal(mu[k[i]],sigma[k[i]],1).T
+        x[i],y[i]=np.random.multivariate_normal(mu[k[i]],cov[k[i]],1).T
     return x,y
 
-def dt_mtx(a,b,discretezation):
-    """ Generates the discretization grid on which the function will be estimated over """
-    x1=np.arange(a,b,discretezation)
-    x2=np.arange(a,b,discretezation)
+def dt_mtx(interval,shift):
+    x1=interval*shift[0]
+    x2=interval*shift[1]
     coord_mtx=np.zeros((len(x1),len(x2),2))
     for i in range(0,len(x1)):
         coord_mtx[:,i]=np.array((x1,np.full(len(x1),x2[i]))).T
     return coord_mtx
 
 def sim_sample1d(n,x_params=None,beta_params=None):
-    """ Generates a simulated sample if the user wishes to run test examples """
-    if not x_params:
-        x_params = [0,1]
-    else:
-        x_params = x_params
-    if not beta_params:
-        beta_params = [[0.5,0.5],[[1.5,1.5],[-1.5,-1.5]], [[[1, 0], [0, 1]],[[1, 0], [0, 1]]]]
-    else:
-        beta_params = beta_params
-    x_1=np.random.normal(x_params[0],x_params[1],n).T
-    x_0=np.repeat(1,n)
-    t={'col1':x_0, 'col2': x_1}
-    test=np.array(pd.DataFrame(t))
-    x_sample=test
-    b0,b1=ransample_bivar(n,beta_params[0],beta_params[1],beta_params[2])
-    b={'col1':b0,'col2':b1}
-    beta_test=np.array(pd.DataFrame(b))
-    #getting the array B*X
-    bx=beta_test*test
-    #Creating Y
-    y=np.array([sum(x) for x in bx])
-    xy_sample=np.c_[test,y]
-    return xy_sample
+	if not x_params:
+		x_params = [0,1]
+	else:
+		x_params = x_params
+	if not beta_params:
+		beta_params = [[0.5,0.5],[[1.5,1.5],[-1.5,-1.5]], [[[1, 0], [0, 1]],[[1, 0], [0, 1]]]]
+	else:
+		beta_params = beta_params
+	x_1=np.random.normal(x_params[0],x_params[1],n).T
+	x_0=np.repeat(1,n)
+	t={'col1':x_0, 'col2': x_1}
+	test=np.array(pd.DataFrame(t))
+	x_sample=test
+	b0,b1=ransample_bivar(n,beta_params[0],beta_params[1],beta_params[2])
+	b={'col1':b0,'col2':b1}
+	beta_test=np.array(pd.DataFrame(b))
+	#getting the array B*X
+	bx=beta_test*test
+	#Creating Y
+	y=np.array([sum(x) for x in bx])
+	xy_sample=np.c_[test,y]
+	return xy_sample
 
 def filt(start,end,step,array):
-    """ Filteres the beta intersection points to remove redundant points"""
     t=array[:,0]>=start
     array=array[t]
     t1=array[:,0]<=end-step
@@ -86,11 +230,9 @@ def filt(start,end,step,array):
     return array
 
 def dist_xy(p1,p2):
-    """ Calculates distance between intersection points """
     return np.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2)
 
 def filt2(array,slope):
-    """ Further reduces redundant intersection points """
     n=len(array)
     if (slope[1]<=0 and slope[0]>=0) or (slope[1]>=0 and slope[0]<=0):
         return array[1:n]
@@ -102,7 +244,6 @@ def box_avg(grid,i,j):
     return avg/4
 
 def which_Bi(point,Bi_grid):
-    """ Identifies """
     if len(b1s[b1s<point[0]])>0: 
         i=len(b1s[b1s<point[0]])-1
     else:
@@ -113,16 +254,18 @@ def which_Bi(point,Bi_grid):
         j=0
     return Bi_grid[i][j]
 
+def likelihood_wrapper(f0,sample,b1s,b0s,start,end):
+    fs=np.array([f_yx_test(f0,i[0],i[1],b1s,b0s,start,end) for i in sample])
+    return -sum(np.log(fs))
+
+
 def big_L(sample_size,k):
-    """ Initializes the transformation matrix """
     coord_mtx=np.zeros((sample_size,k))
     return coord_mtx
 
-def which_ij(point,slope,grid):
-    """ Returns indices of intersection point """
-    """ Output is used in creating the transformation matrix """
-    b1s = grid
-    b0s = grid
+def which_ij(point,slope,interval):
+    b0s=interval
+    b1s=interval
     if (slope[1]<=0 and slope[0]>=0) or (slope[1]>=0 and slope[0]<=0):
         if len(b1s[b1s<point[0]])>0: 
             i=len(b1s[b1s<point[0]])-1
@@ -145,17 +288,15 @@ def which_ij(point,slope,grid):
         return i,j
 
 def index_conv(ijs,k):
-    """ Converts the index tuple into a vector index"""
     val=np.array([x[1]*np.sqrt(k)+x[0] for x in ijs])
     return val
 
 def get_intervals(xi,yi,grid):
-    """ Computes for segment length for use in the finite volume approximation of the integral """
-    b1s = grid
-    b0s = grid
-    step = abs(b1s[0]-b1s[1])
-    start = grid[0]
-    end = grid[-1]+step
+    start = grid.start
+    end = grid.end
+    step = grid.step
+    b0s=grid.interval
+    b1s=grid.interval
     if xi[1]!= 0 and xi[0]!=0:
         b0=(yi-b1s*xi[1])/xi[0]
         b1=(yi-b0s*xi[0])/xi[1]
@@ -176,12 +317,11 @@ def get_intervals(xi,yi,grid):
     return intervals
 
 def get_intersections(xi,yi,grid):
-    """ Computes for intersection points on the grid """
-    b1s = grid
-    b0s = grid
-    step = abs(b1s[0]-b1s[1])
-    start = grid[0]
-    end = grid[-1]+step
+    start = grid.start
+    end = grid.end
+    step = grid.step
+    b0s=grid.interval
+    b1s=grid.interval
     if xi[1]!= 0 and xi[0]!=0:
         b0=(yi-b1s*xi[1])/xi[0]
         b1=(yi-b0s*xi[0])/xi[1]
@@ -201,105 +341,97 @@ def get_intersections(xi,yi,grid):
     reduced_b1b0=filt2(new_b1b0,xi)
     return reduced_b1b0
 
-def create_L(sample,f_dimension,grid):
-    """ Constructs the transformation matrix """
-    L=big_L(len(sample),f_dimension)
+def create_L(sample,grid):
+    L=big_L(len(sample),grid.numgridpoints())
     for n in range(0,len(sample)):
         intervals=get_intervals(sample[n],sample[n][2],grid)
         intersection=get_intersections(sample[n],sample[n][2],grid)
-        indices=index_conv([which_ij(p,sample[n],grid) for p in intersection],f_dimension)
+        indices=index_conv([which_ij(p,sample[n],grid.interval) for p in intersection],grid.numgridpoints())
         indices=list(map(int,indices))
         for i in range(0,len(indices)):
             L[n][indices[i]]=intervals[i]
-    return L
+    L = L[~np.all(L==0, axis=1)]
+    return transmatrix(Tmat=L,grid=grid)
 
-def likelihood_l(f,L):
-    """ Likelihood function without regularization"""
+def likelihood_l(f,L,n):
+    L=L.reshape(n,len(f))
     f[f<0]=10**-16
     val=np.log(np.dot(L,f))
     return -sum(val)
     
 def no_penal(f,n,L_mat_long):
-    """ Likelihood function without regularization"""
-    import numpy as np
-    L_mat=L_mat_long.reshape(n,len(f))
-    f[f<0]=10**-6
-    val=np.log(np.dot(L_mat,f))
-    return -sum(val)/n
-
+	import numpy as np
+	L_mat=L_mat_long.reshape(n,len(f))
+	f[f<0]=10**-6
+	val=np.log(np.dot(L_mat,f))
+	return -sum(val)/n
 
 def norm2_penal(f,alpha,n,L_mat_long,step):
-    """ Likelihood function with a 2-norm penalty """
-    import numpy as np
-    L_mat=L_mat_long.reshape(n,len(f))
-    f[f<0]=10**-6
-    val=np.log(np.dot(L_mat,f))
-    return -sum(val)/n+ alpha*step**2*sum(f**2)
+	import numpy as np
+	L_mat=L_mat_long.reshape(n,len(f))
+	f[f<0]=10**-6
+	val=np.log(np.dot(L_mat,f))
+	return -sum(val)/n+ alpha*step**2*sum(f**2)
 
 def sobolev_norm_penal(f,alpha,n,L_mat_long,step):
-    """ Likelihood function with the sobolev norm for H1 penalty """
     import numpy as np
     L_mat=L_mat_long.reshape(n,len(f))
     f[f<0]=10**-6
-    val=np.log(np.dot(L_mat,f))
-    return -sum(val)/n + alpha*step**2*sum(f**2)+alpha*step**2*norm_fprime(f,step)
+    val=-np.sum(np.log(np.dot(L_mat,f)))/n
+    penal=alpha*step**2*sum(f**2)+alpha*step**2*norm_fprime(f,step)
+    return val + penal
 
 def entropy_penal(f,alpha,n,L_mat_long,step):
-    """ Likelihood function with entropy penalty """
-    import numpy as np
-    L_mat=L_mat_long.reshape(n,len(f))
-    f[f<0]=10**-6
-    val=np.log(np.dot(L_mat,f))
-    return -sum(val)/n + alpha*step**2*sum(f*np.log(f))
+	import numpy as np
+	L_mat=L_mat_long.reshape(n,len(f))
+	f[f<0]=10**-6
+	val=np.log(np.dot(L_mat,f))
+	return -sum(val)/n + alpha*step**2*sum(f*np.log(f))
 
 
 def likelihood_hess(f,L):
-    import numpy as np
-    dldf2=[None]*len(f)
-    denom=np.dot(L,f)
-    for i in range(0,len(f)):
-        e=np.zeros(len(f))
-        e[i]=1
-        dldf2[i]=sum(np.dot(L,e)/denom**2)
-    return np.array(dldf2)
+	import numpy as np
+	dldf2=[None]*len(f)
+	denom=np.dot(L,f)
+	for i in range(0,len(f)):
+		e=np.zeros(len(f))
+		e[i]=1
+		dldf2[i]=sum(np.dot(L,e)/denom**2)
+	return np.array(dldf2)
 
 def tot_deriv(f,step):
-    import numpy as np
-    f=f.reshape(int(np.sqrt(len(f))),int(np.sqrt(len(f))))
-    fgrad=np.gradient(f,step)
-    return np.ravel((np.sqrt(fgrad[0]**2+fgrad[1]**2)))
+	import numpy as np
+	f=f.reshape(int(np.sqrt(len(f))),int(np.sqrt(len(f))))
+	fgrad=np.gradient(f,step)
+	return np.ravel((np.sqrt(fgrad[0]**2+fgrad[1]**2)))
 
 def norm_fprime(f,step):
-    """ Computes for the norm of the first derivative of the function being estimated """
-    import numpy as np
-    f=f.reshape(int(np.sqrt(len(f))),int(np.sqrt(len(f))))
-    fgrad=np.gradient(f,step)
-    return sum(np.ravel((fgrad[0]**2+fgrad[1]**2)))
+	import numpy as np
+	f=f.reshape(int(np.sqrt(len(f))),int(np.sqrt(len(f))))
+	fgrad=np.gradient(f,step)
+	return sum(np.ravel((fgrad[0]**2+fgrad[1]**2)))
 
 def second_deriv(f,step):
-    """ Computes for the second derivative of the function being estimated """
-    import numpy as np
-    f=f.reshape(int(np.sqrt(len(f))),int(np.sqrt(len(f))))
-    fgrad0=np.ravel(np.gradient(np.gradient(f,step)[0],step)[0])
-    fgrad1=np.ravel(np.gradient(np.gradient(f,step)[1],step)[1])
-    return fgrad0+fgrad1
+	import numpy as np
+	f=f.reshape(int(np.sqrt(len(f))),int(np.sqrt(len(f))))
+	fgrad0=np.ravel(np.gradient(np.gradient(f,step)[0],step)[0])
+	fgrad1=np.ravel(np.gradient(np.gradient(f,step)[1],step)[1])
+	return fgrad0+fgrad1
 
 def jac_no_penal(f,n,L_mat_long):
-    """ Jacobian of the functional with no regularization """
-    import numpy as np
-    L_mat=L_mat_long.reshape(n,len(f))
-    denom=np.dot(L_mat,f)
-    val=L_mat.T/denom
-    return -val.T.sum(axis=0)/n
+	import numpy as np
+	L_mat=L_mat_long.reshape(n,len(f))
+	denom=np.dot(L_mat,f)
+	val=L_mat.T/denom
+	return -val.T.sum(axis=0)/n
 
 
 def jac_norm2_penal(f,alpha,n,L_mat_long,step):
-    """ Jacobian of the functional with a 2-norm penalty """
-    import numpy as np
-    L_mat=L_mat_long.reshape(n,len(f))
-    denom=np.dot(L_mat,f)
-    val=L_mat.T/denom
-    return -val.T.sum(axis=0)/n+alpha*step**2*2*f
+	import numpy as np
+	L_mat=L_mat_long.reshape(n,len(f))
+	denom=np.dot(L_mat,f)
+	val=L_mat.T/denom
+	return -val.T.sum(axis=0)/n+alpha*step**2*2*f
 
 """def jac_sobolev2(f,alpha,n):
     denom=np.dot(L_mat,f)
@@ -307,44 +439,152 @@ def jac_norm2_penal(f,alpha,n,L_mat_long,step):
     return -val.T.sum(axis=0)/n+alpha*step**2*2*f+2*alpha*step**2*second_deriv(f)"""
 
 def jac_sobolev_norm_penal(f,alpha,n,L_mat_long,step):
-    """ Jacobian of the functional with the sobolev penalty """
-    import numpy as np
-    L_mat=L_mat_long.reshape(n,len(f))
-    denom=np.dot(L_mat,f)
-    val=L_mat.T/denom
-    return -val.T.sum(axis=0)/n-2*alpha*step**2*second_deriv(f,step)
+	import numpy as np
+	L_mat=L_mat_long.reshape(n,len(f))
+	denom=np.dot(L_mat,f)
+	val=L_mat.T/denom
+	return -val.T.sum(axis=0)/n+alpha*step**2*2*f-2*alpha*step**2*second_deriv(f,step)
 
 def jac_entropy_penal(f,alpha,n,L_mat_long,step):
-    """ Jacobian of the functional with entropy penalty """
-    import numpy as np
-    L_mat=L_mat_long.reshape(n,len(f))
-    denom=np.dot(L_mat,f)
-    val=L_mat.T/denom
-    return -val.T.sum(axis=0)/n+alpha*step**2*(np.log(f)+1)
+	import numpy as np
+	L_mat=L_mat_long.reshape(n,len(f))
+	denom=np.dot(L_mat,f)
+	val=L_mat.T/denom
+	return -val.T.sum(axis=0)/n+alpha*step**2*(np.log(f)+1)
 
 def ise(f1,f2,step_size):
-    """ Computes for the integrated squared error between two functions """
     val=np.linalg.norm(f1-f2)**2
     return len(f1)**-1*step_size**2*val
 
-def prop_noise(alpha,n,C):
-    """ Estimate for upper limit of variance in the implementation of Lepskii's principle"""
-    val=C*alpha**-1*n**-1.5
+def mise(f1,f2,step_size):
+    val=np.linalg.norm(f1-f2)**2
+    return step_size**2*val
+
+def sq_l2(f1,f2):
+    val = np.linalg.norm(f1-f2)**2
     return val
+
+def prop_n(r,q,i):
+    return 8*r**((1-i)/q)
 
 def get_int(x):
     if any(x<0):
         return next(i for i in x if i<=0)
     else:
         return x[-1]
+    
+def updt(total, progress):
 
-def rmle_1d(functional,alpha,trans_matrix,step_size,jacobian=None,initial_guess=None,hessian_method=None,constraints=None,tolerance=None,max_iter=None,bounds=None):
-    """ Wrapper function for the minimization function from scipy.optimize """
-    """ Passes the functional of choice to the minimization algorithm along with the matching jacobian """
-    """ Returns the estimate for f_hat """
-    n=len(trans_matrix)
-    m=len(np.transpose(trans_matrix))
-    trans_matrix_long = np.ravel(trans_matrix)
+    """
+    Displays or updates a console progress bar.
+    Source: https://stackoverflow.com/questions/3160699/python-progress-bar
+    
+    """
+    barLength, status = 20, ""
+    progress = float(progress) / float(total)
+    if progress >= 1.:
+        progress, status = 1, "\r\n"
+    block = int(round(barLength * progress))
+    text = "\r[{}] {:.0f}% {}".format(
+        "#" * block + "-" * (barLength - block), round(progress * 100, 0),
+        status)
+    sys.stdout.write(text)
+    sys.stdout.flush()
+    
+def index_finder(diffs):
+    i=0
+    for d in diffs:
+        val = np.sum(d[d<0])
+        i+=1
+        if val != 0:
+            break
+    return int(i-1)
+
+def prop_n(r,q,i):
+    return 8*r**((1-i)/q)
+
+def alpha_vals(a,n):
+    itrs=[]
+    for i in range(0,n):
+        itrs.append(a*0.9**i)
+    itrs.reverse()
+    return itrs
+
+def alpha_lep(n,sample_size,r):
+    a=1/(2*sample_size)*np.log(sample_size)/np.sqrt(sample_size)
+    itrs=[]
+    for i in range(0,n):
+        itrs.append(a*r**i)
+    itrs=[i for i in itrs if i <=2]
+    return itrs
+
+def shuffle(sample):
+    n=len(sample)
+    indices=np.arange(0,n)
+    random.shuffle(indices)
+    i=0
+    new_sample=[]
+    for i in indices:
+        new_sample.append(sample[i])
+    return new_sample
+
+def cv_index(n,k):
+    n_k = int(np.ceil(n/k))
+    if n%k != 0:
+        indices=np.arange(0,n,n_k)[0:-1]
+    else:
+        indices=np.arange(0,n,n_k)
+    return indices
+
+def cv_loss(a,alphas,n,k,progress,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound):
+    indices=cv_index(n,k)
+    f_n=scop.minimize(functional,initial_guess,args=(a,n,trans_matrix_long,step_size),method='trust-constr',jac=jacobian,hess=hessian_method,constraints=[constraints],tol=tolerance,options={'verbose': False,'maxiter': max_iter},bounds=bound)
+    fs=[]
+    trans_matrix_slices=[]
+    inv_trans_matrix_slices=[]
+    trans_matrix_slices.append(trans_matrix[indices[1]:])
+    trans_matrix_slices.append(trans_matrix[:indices[-1]])
+    inv_trans_matrix_slices.append(trans_matrix[:indices[1]])
+    inv_trans_matrix_slices.append(trans_matrix[indices[-1]:])
+    j=progress
+    loss=0
+    for i in range(1,len(indices)-1):
+        trans_matrix_slices.append(np.concatenate((trans_matrix[:indices[i]],trans_matrix[indices[i+1]:])))
+        inv_trans_matrix_slices.append(trans_matrix[indices[i]:indices[i+1]])
+    for t,i in zip(trans_matrix_slices,inv_trans_matrix_slices):
+        trans_matrix_slice_long = np.ravel(t)
+        inv_trans_matrix_slice_long = np.ravel(i)
+        n=len(t)
+        n_i = len(i)
+        val_f=scop.minimize(functional,initial_guess,args=(a,n,trans_matrix_slice_long,step_size),method='trust-constr',jac=jacobian,hess=hessian_method,constraints=[constraints],tol=tolerance,options={'verbose': False,'maxiter': max_iter},bounds=bound).x
+        fs.append(val_f)
+        loss+=likelihood_l(val_f,inv_trans_matrix_slice_long,n_i)
+        j+=1
+        updt(total,j)
+    return f_n.x,loss/k,j
+
+def quarter_selector(alphas,n,k,progress,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound):
+    alphas=alphas
+    len_a =len(alphas)
+    quart_a = int(np.ceil(len_a)*0.75)
+    p,q=random.randint(0,quart_a-1),random.randint(quart_a,len_a-1)
+    a_p=alphas[p]
+    a_q=alphas[q]
+    val1=cv_loss(a_p,alphas,n,k,progress,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
+    val2=cv_loss(a_q,alphas,n,k,progress,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
+    alphas=np.delete(alphas,[p,q])
+    if val1[1] < val2[1]:
+        alphas=alphas[:quart_a-2]
+        return val1[0],alphas,val1[1],val1[2],a_p
+    else:
+        alphas=alphas[quart_a-1:len_a-2]
+        return val2[0],alphas,val2[1],val2[2],a_q
+
+def rmle_1d(functional,alpha,tmat,step_size,k=None,jacobian=None,initial_guess=None,hessian_method=None,constraints=None,tolerance=None,max_iter=None,bounds=None):
+    n=tmat.n()
+    m=tmat.m()
+    trans_matrix_long = np.ravel(tmat.Tmat)
+    trans_matrix = tmat.Tmat
     if not initial_guess:
         initial_guess = np.zeros(m)+0.000001
     else:
@@ -381,8 +621,65 @@ def rmle_1d(functional,alpha,trans_matrix,step_size,jacobian=None,initial_guess=
         bound = scop.Bounds(0,np.inf)
     else:
         bound = bounds
-    result = scop.minimize(functional,initial_guess,args=(alpha,n,trans_matrix_long,step_size),method='trust-constr',jac=jacobian,hess=hessian_method,constraints=[constraints],tol=tolerance,options={'verbose': 1,'maxiter': max_iter},bounds=bound)
-    return result
+    if not k:
+        k = 20
+    else:
+        k = k
+    if alpha=='Lepskii' or alpha=='lepskii':
+        r=1.2
+        alphas=alpha_lep(70,n,r)
+        reconstructions=[]
+        total = len(alphas)
+        i_range=np.arange(0,len(alphas))
+        j=0
+        times=[]
+        for a in alphas:
+            rec = scop.minimize(functional,initial_guess,args=(a,n,trans_matrix_long,step_size),method='trust-constr',jac=jacobian,hess=hessian_method,constraints=[constraints],tol=tolerance,options={'verbose': False,'maxiter': max_iter},bounds=bound)
+            reconstructions.append(rec.x)
+            j+=1
+            updt(total,j)
+        approx_errs = []
+        for i in range(1,len(reconstructions)):
+            jj=0
+            approx_error = []
+            while jj < i:
+                approx_error.append(np.linalg.norm(reconstructions[i]-reconstructions[jj]))
+                jj+=1
+            approx_errs.append(approx_error)
+        prop_errors=prop_n(r,2,i_range)
+        diffs=[]
+        for p in approx_errs:
+            n_p = int(len(p))
+            diffs.append(np.array(prop_errors[:n_p])-np.array(p))
+        index=index_finder(diffs)
+        returnRMLEResult(f=result.x,alpha=alpha,alpmth='Lepskii',T=tmat,details=None)
+    if alpha=='cv' or alpha == 'CV':
+        alphas=alpha_vals(step_size*3,30)
+        lhood=[]
+        reconstructions=[]
+        alpha_list=[]
+        trans_matrix=shuffle(trans_matrix)
+        j=0
+        total = np.ceil(len(alphas)*np.log(2/len(alphas))/np.log(0.75))
+        while len(alphas)>=2:
+            val=quarter_selector(alphas,n,k,j,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
+            lhood.append(val[2])
+            reconstructions.append(val[0])
+            j=val[3]
+            alphas=val[1]
+            alpha_list.append(val[4])
+        for a in alphas:
+            val=cv_loss(a,alphas,n,k,j,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
+            lhood.append(val[1])
+            reconstructions.append(val[0])
+            alpha_list.append(a)
+            j=val[2]
+        index=np.int(np.where(lhood==np.min(lhood))[0])
+        updt(total,total)
+        return RMLEResult(f=result.x,alpha=alpha,alpmth='CV',T=tmat,details=None)
+    else:
+        result = scop.minimize(functional,initial_guess,args=(alpha,n,trans_matrix_long,step_size),method='trust-constr',jac=jacobian,hess=hessian_method,constraints=[constraints],tol=tolerance,options={'verbose': 1,'maxiter': max_iter},bounds=bound)
+        return RMLEResult(f=result.x,alpha=alpha,alpmth='User',T=tmat,details=None)
 
 #2-D functions
 
@@ -403,14 +700,24 @@ def conv_dec(p):
     from decimal import Decimal
     p=np.array([Decimal(str(i)) for i in p])
     return p
-def edge_check(p,start,end):
+
+def edge_check2(p,start,end):
     check=[]
     for i in p:
         check.append((abs(i)-abs(end))==0 or (abs(i)-abs(start))==0 or (abs(i)-abs(start))==abs(abs(end)-abs(start)) or (abs(i)-abs(end))==abs(abs(end)-abs(start)))
     return check
 
-def outer_edge_check(p,start,end):
+def edge_check(p,start,end):
+    check=[]
+    for i in p:
+        check.append((i-end)==0 or (i-start)==0)
+    return check
+
+def outer_edge_check2(p,start,end):
     return (abs(p)-abs(end))==0 or (abs(p)-abs(start))==0 or (abs(p)-abs(start))==abs(abs(end)-abs(start) or (abs(p)-abs(end))==abs(abs(end)-abs(start)))
+
+def outer_edge_check(p,start,end):
+    return (p-end)==0 or (p-start)==0
 
 def is_point_vertex(point,step_size):
     check = point%step_size
@@ -485,6 +792,14 @@ def point_check(point,start,end):
             check+=1
     return check
 
+def vertex_check(point,interval):
+    val = 0
+    for p in point:
+        if p in interval:
+            val+=1
+    return val
+
+
 def get_box_index(point,start,end,step_size,interval,ks):
     point_dec=conv_dec(point)
     step_size=conv_dec([step_size])[0]
@@ -529,7 +844,7 @@ def get_box_index(point,start,end,step_size,interval,ks):
     elif sum(edge_check(point_dec,start,end))==2: #case for outermost-edge
         indices = np.array([get_index(point,interval,ks[2])],dtype=int) 
         return list(indices)
-    elif (sum((abs(point_dec)-abs(start))==0)==1 or sum((abs(point_dec)-abs(end))==0)==1): #case for outer-edge
+    elif sum(edge_check(point_dec,start,end))==1: #case for outer-edge
         if outer_edge_check(point_dec[1],start,end): #change logic
             if point_dec[0]%step_size==0 :
                 indices = np.array([get_index(point,interval,ks[2])]*2,dtype=int)
@@ -619,12 +934,22 @@ def big_L2d(sample_size,k):
     coord_mtx=np.zeros((sample_size,k))
     return coord_mtx
 
-def create_L2d(sample,f_dimension,start,end,step,interval,ks):
-    interval_round=np.array([round(i,8) for i in interval])
-    L=big_L2d(len(sample),f_dimension)
+def likelihood_l(f,L,n):
+    L=L.reshape(n,len(f))
+    f[f<0]=10**-16
+    val=np.log(np.dot(L,f))
+    return -sum(val)
+
+def create_L2d(sample,grid):
+    interval_round=np.array([round(i,8) for i in grid.interval])
+    L=big_L2d(len(sample),grid.numgridpoints())
     b0s=interval_round
     b1s=interval_round
     b2s=interval_round
+    start = grid.start
+    end = grid.end
+    ks = grid.ks()
+    step = grid.step
     for n in range(0,len(sample)):
         b0_based_intersections = []
         b1_based_intersections = []
@@ -669,7 +994,8 @@ def create_L2d(sample,f_dimension,start,end,step,interval,ks):
         area_indices = list(np.where(np.array(areas_flat)>0)[0])
         for i in area_indices:
             L[n][i]=areas_flat[i]
-    return L
+    L= L[~np.all(L==0, axis=1)]
+    return transmatrix(Tmat=L,grid=grid)
 
 def second_deriv_3d(f,step):
     f=f+10e-3
@@ -700,10 +1026,20 @@ def jac_sobolev_penal2d(f,alpha,n,L_mat_long,step):
     val=L_mat.T/denom
     return -val.T.sum(axis=0)/n+alpha*step**3*2*f-2*alpha*step**3*second_deriv_3d(f,step)
 
-def rmle_2d(functional,alpha,trans_matrix,step_size,jacobian=None,initial_guess=None,hessian_method=None,constraints=None,tolerance=None,max_iter=None,bounds=None):
-    n=len(trans_matrix)
-    m=len(np.transpose(trans_matrix))
-    trans_matrix_long = np.ravel(trans_matrix)
+def jac_sobolev_norm_penal(f,alpha,n,L_mat_long,step):
+	import numpy as np
+	L_mat=L_mat_long.reshape(n,len(f))
+	denom=np.dot(L_mat,f)
+	val=L_mat.T/denom
+	return -val.T.sum(axis=0)/n-2*alpha*step**2*second_deriv(f,step)
+
+
+def rmle_2d(functional,alpha,tmat,jacobian=None,initial_guess=None,hessian_method=None,constraints=None,tolerance=None,max_iter=None,bounds=None):
+    n=tmat.n()
+    m=tmat.m()
+    step_size = tmat.grid.step
+    trans_matrix_long = np.ravel(tmat.Tmat)
+    trans_matrix = tmat.Tmat
     if not initial_guess:
         initial_guess = np.zeros(m)+0.1
     else:
@@ -734,8 +1070,43 @@ def rmle_2d(functional,alpha,trans_matrix,step_size,jacobian=None,initial_guess=
         bound = scop.Bounds(0,np.inf)
     else:
         bound = bounds
-    result = scop.minimize(functional,initial_guess,args=(alpha,n,trans_matrix_long,step_size),method='trust-constr',jac=jacobian,hess=hessian_method,constraints=[constraints],tol=tolerance,options={'verbose': 1,'maxiter': max_iter},bounds=bound)
-    return result
+    if alpha=='Lepskii' or alpha=='lepskii':
+        C_lepskii = 2
+        alphas=alpha_vals(step_size*3,30)
+        reconstructions=[]
+        total = len(alphas)
+        j=0
+        for a in alphas:
+            rec = scop.minimize(functional,initial_guess,args=(a,n,trans_matrix_long,step_size),method='trust-constr',jac=jacobian,hess=hessian_method,constraints=[constraints],tol=tolerance,options={'verbose': False,'maxiter': max_iter},bounds=bound)
+            reconstructions.append(rec.x)
+            j+=1
+            updt(total,j)
+        prop_errors=[prop_noise(i,sample_size,C_lepskii) for i in alphas]
+        approx_error=[ise(reconstructions[0],reconstructions[i+1],step_size) for i in range(0,len(reconstructions)-1)]
+        approx_error=[0]+approx_error
+        index=np.where((np.array(prop_errors)-np.array(approx_error))==get_int((np.array(prop_errors)-np.array(approx_error))))[0][0]
+        return RMLEResult(f=result.x,alpha=alpha,alpmth='User',T=tmat,details=None)
+    if alpha=='cv' or alpha == 'CV':
+        alphas=alpha_vals(step_size*3,30)
+        lhood=[]
+        reconstructions=[]
+        alpha_list=[]
+        trans_matrix=shuffle(trans_matrix)
+        j=0
+        total = np.ceil(len(alphas)*np.log(2/len(alphas))/np.log(0.75))
+        while len(alphas)>=2:
+            val=quarter_selector(alphas,n,k,j,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
+            lhood.append(val[2])
+            reconstructions.append(val[0])
+            j=val[3]
+            alphas=val[1]
+            alpha_list.append(val[4])
+        index=np.int(np.where(lhood==np.min(lhood))[0])
+        updt(total,total)
+        return RMLEResult(f=result.x,alpha=alpha,alpmth='User',T=tmat,details=None)
+    else:
+        result = scop.minimize(functional,initial_guess,args=(alpha,n,trans_matrix_long,step_size),method='trust-constr',jac=jacobian,hess=hessian_method,constraints=[constraints],tol=tolerance,options={'verbose': 1,'maxiter': max_iter},bounds=bound)
+        return RMLEResult(f=result.x,alpha=alpha,alpmth='User',T=tmat,details=None)
 
 def plot_rmle(f,step_size=None,dim=None,grid_lims=None):
     """ Returns contour plots of the function estimated"""
