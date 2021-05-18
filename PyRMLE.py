@@ -1071,21 +1071,33 @@ def rmle_2d(functional,alpha,tmat,jacobian=None,initial_guess=None,hessian_metho
     else:
         bound = bounds
     if alpha=='Lepskii' or alpha=='lepskii':
-        C_lepskii = 2
-        alphas=alpha_vals(step_size*3,30)
+        r=1.2
+        alphas=alpha_lep(70,n,r)
         reconstructions=[]
         total = len(alphas)
+        i_range=np.arange(0,len(alphas))
         j=0
+        times=[]
         for a in alphas:
             rec = scop.minimize(functional,initial_guess,args=(a,n,trans_matrix_long,step_size),method='trust-constr',jac=jacobian,hess=hessian_method,constraints=[constraints],tol=tolerance,options={'verbose': False,'maxiter': max_iter},bounds=bound)
             reconstructions.append(rec.x)
             j+=1
             updt(total,j)
-        prop_errors=[prop_noise(i,sample_size,C_lepskii) for i in alphas]
-        approx_error=[ise(reconstructions[0],reconstructions[i+1],step_size) for i in range(0,len(reconstructions)-1)]
-        approx_error=[0]+approx_error
-        index=np.where((np.array(prop_errors)-np.array(approx_error))==get_int((np.array(prop_errors)-np.array(approx_error))))[0][0]
-        return RMLEResult(f=result.x,alpha=alpha,alpmth='User',T=tmat,details=None)
+        approx_errs = []
+        for i in range(1,len(reconstructions)):
+            jj=0
+            approx_error = []
+            while jj < i:
+                approx_error.append(np.linalg.norm(reconstructions[i]-reconstructions[jj]))
+                jj+=1
+            approx_errs.append(approx_error)
+        prop_errors=prop_n(r,2,i_range)
+        diffs=[]
+        for p in approx_errs:
+            n_p = int(len(p))
+            diffs.append(np.array(prop_errors[:n_p])-np.array(p))
+        index=index_finder(diffs)
+        returnRMLEResult(f=result.x,alpha=alpha,alpmth='Lepskii',T=tmat,details=None)
     if alpha=='cv' or alpha == 'CV':
         alphas=alpha_vals(step_size*3,30)
         lhood=[]
@@ -1101,9 +1113,15 @@ def rmle_2d(functional,alpha,tmat,jacobian=None,initial_guess=None,hessian_metho
             j=val[3]
             alphas=val[1]
             alpha_list.append(val[4])
+        for a in alphas:
+            val=cv_loss(a,alphas,n,k,j,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
+            lhood.append(val[1])
+            reconstructions.append(val[0])
+            alpha_list.append(a)
+            j=val[2]
         index=np.int(np.where(lhood==np.min(lhood))[0])
         updt(total,total)
-        return RMLEResult(f=result.x,alpha=alpha,alpmth='User',T=tmat,details=None)
+        return RMLEResult(f=result.x,alpha=alpha,alpmth='CV',T=tmat,details=None)
     else:
         result = scop.minimize(functional,initial_guess,args=(alpha,n,trans_matrix_long,step_size),method='trust-constr',jac=jacobian,hess=hessian_method,constraints=[constraints],tol=tolerance,options={'verbose': 1,'maxiter': max_iter},bounds=bound)
         return RMLEResult(f=result.x,alpha=alpha,alpmth='User',T=tmat,details=None)
