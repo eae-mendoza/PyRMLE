@@ -1034,12 +1034,12 @@ def jac_sobolev_norm_penal(f,alpha,n,L_mat_long,step):
 	return -val.T.sum(axis=0)/n-2*alpha*step**2*second_deriv(f,step)
 
 
-def rmle_2d(functional,alpha,tmat,jacobian=None,initial_guess=None,hessian_method=None,constraints=None,tolerance=None,max_iter=None,bounds=None):
+def rmle_2d(functional,alpha,tmat,step_size,jacobian=None,initial_guess=None,hessian_method=None,constraints=None,tolerance=None,max_iter=None,bounds=None):
     n=tmat.n()
     m=tmat.m()
-    step_size = tmat.grid.step
     trans_matrix_long = np.ravel(tmat.Tmat)
     trans_matrix = tmat.Tmat
+    step_size = tmat.grid.step
     if not initial_guess:
         initial_guess = np.zeros(m)+0.1
     else:
