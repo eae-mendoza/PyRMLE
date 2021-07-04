@@ -689,11 +689,11 @@ def rmle_2d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
         return RMLEResult(f=result.x,alpha=alpha,alpmth='User',T=tmat,details=None)
 
 def edge_check(p,start,end):
-   """ This function checks if the coordinates of a point lies at the edge of a grid. It returns a list of 
+    """ This function checks if the coordinates of a point lies at the edge of a grid. It returns a list of 
    boolean values. """
-   check=[]
-   for i in p:
-       check.append((i-end)==0 or (i-start)==0)
+    check=[]
+    for i in p:
+        check.append((i-end)==0 or (i-start)==0)
     return check
   
 def outer_edge_check(p,start,end):
