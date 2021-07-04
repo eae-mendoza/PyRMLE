@@ -1,3 +1,4 @@
+from PyRMLE_hfuncs import *
 
 class RMLEResult:
     """ Class used to store the result of the rmle() function. 
