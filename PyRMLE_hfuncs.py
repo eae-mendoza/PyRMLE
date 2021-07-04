@@ -689,16 +689,15 @@ def rmle_2d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
         return RMLEResult(f=result.x,alpha=alpha,alpmth='User',T=tmat,details=None)
 
 def edge_check(p,start,end):
-    """ This function checks if the coordinates of a point lies at the edge of a grid. It returns a list of 
-   boolean values. """
+    """ This function checks if the coordinates of a point lies at the edge of a grid. It returns a list of boolean values."""
     check=[]
     for i in p:
         check.append((i-end)==0 or (i-start)==0)
     return check
   
 def outer_edge_check(p,start,end):
-  """ This function checks if a specific coordinate is at the edge of the grid."""
-  return (p-end)==0 or (p-start)==0
+    """ This function checks if a specific coordinate is at the edge of the grid."""
+    return (p-end)==0 or (p-start)==0
 
  
 def get_index(point,interval,k):
@@ -711,14 +710,14 @@ def get_index(point,interval,k):
     index = x[0] + x[1]*k**(1/3) + x[2]*k**(2/3)
     return np.ceil(index)
 
- def point_check(point,start,end):
-    """ This function checks if the coordinates of a point lies at the edge of a grid. It returns a list of 
-    boolean values. """
-    check=0
-    for i in point:
-        if i == start or i == end:
-            check+=1
-    return check
+def point_check(point,start,end):
+        """ This function checks if the coordinates of a point lies at the edge of a grid. It returns a list of 
+        boolean values. """
+        check=0
+        for i in point:
+            if i == start or i == end:
+                check+=1
+        return check
 
 def vertex_check(point,interval):
     """ This function checks if a point has coordinates that lies on the grid, but are not on outer-edges. """
