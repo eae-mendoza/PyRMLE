@@ -999,11 +999,11 @@ def rmle_2d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
         details = {
             "Regularization Functional": str(functional),
             "Jacobian": str(jacboian),
-            "Numer of Grid Points": m
-            "Sample Size": n
-            "Total Run Time": str(et-st) + ' seconds'
-            "Iterations": result.niter
-            "Optimization Run Time": result.execution_time
+            "Numer of Grid Points": m,
+            "Sample Size": n,
+            "Total Run Time": str(et-st) + ' seconds',
+            "Iterations": result.niter,
+            "Optimization Run Time": result.execution_time,
             "Numer of Lepskii iterations": len(alphas)
         }
         return RMLEResult(f=reconstructions[index],alpha=alphas[index],alpmth='Lepskii',T=tmat,details=details)
@@ -1034,12 +1034,12 @@ def rmle_2d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
         details = {
             "Regularization Functional": str(functional),
             "Jacobian": str(jacboian),
-            "Numer of Grid Points": m
-            "Sample Size": n
-            "Total Run Time": str(et-st) + ' seconds'
-            "Iterations": result.niter
-            "Optimization Run Time": result.execution_time
-            "Number of CV iterations": j
+            "Numer of Grid Points": m,
+            "Sample Size": n,
+            "Total Run Time": str(et-st) + ' seconds',
+            "Iterations": result.niter,
+            "Optimization Run Time": result.execution_time,
+            "Number of CV iterations": j,
         }
         return RMLEResult(f=reconstructions[index],alpha=alpha_list[index],alpmth='CV',T=tmat,details=details)
     else:
@@ -1048,11 +1048,11 @@ def rmle_2d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
         details = {
             "Regularization Functional": str(functional),
             "Jacobian": str(jacboian),
-            "Numer of Grid Points": m
-            "Sample Size": n
-            "Total Run Time": str(et-st) + ' seconds'
-            "Iterations": result.niter
-            "Optimization Run Time": result.execution_time
+            "Numer of Grid Points": m,
+            "Sample Size": n,
+            "Total Run Time": str(et-st) + ' seconds',
+            "Iterations": result.niter,
+            "Optimization Run Time": result.execution_time,
         }
         return RMLEResult(f=result.x,alpha=alpha,alpmth='User',T=tmat,details=details)
 
@@ -1510,12 +1510,12 @@ def rmle_3d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
         details = {
             "Regularization Functional": str(functional),
             "Jacobian": str(jacboian),
-            "Numer of Grid Points": m
-            "Sample Size": n
-            "Total Run Time": str(et-st) + ' seconds'
-            "Iterations": result.niter
-            "Optimization Run Time": result.execution_time
-            "Number of Shifts Applied": num_shifts
+            "Numer of Grid Points": m,
+            "Sample Size": n,
+            "Total Run Time": str(et-st) + ' seconds',
+            "Iterations": result.niter,
+            "Optimization Run Time": result.execution_time,
+            "Number of Shifts Applied": num_shifts,
         }
         return RMLEResult(f=reconstructions[min_index],alpha=alpha,alpmth='User',T=shifted_tmatrix,details=None)
     if alpha=='Lepskii' or alpha=='lepskii':
@@ -1549,11 +1549,11 @@ def rmle_3d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
         details = {
             "Regularization Functional": str(functional),
             "Jacobian": str(jacboian),
-            "Numer of Grid Points": m
-            "Sample Size": n
-            "Total Run Time": str(et-st) + ' seconds'
-            "Iterations": result.niter
-            "Optimization Run Time": result.execution_time
+            "Numer of Grid Points": m,
+            "Sample Size": n,
+            "Total Run Time": str(et-st) + ' seconds',
+            "Iterations": result.niter,
+            "Optimization Run Time": result.execution_time,
             "Number of Lepskii iterations": len(alphas)
         }
         return RMLEResult(f=reconstructions[index],alpha=alphas[index],alpmth='Lepskii',T=tmat,details=None)
@@ -1584,11 +1584,11 @@ def rmle_3d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
         details = {
             "Regularization Functional": str(functional),
             "Jacobian": str(jacboian),
-            "Numer of Grid Points": m
-            "Sample Size": n
-            "Total Run Time": str(et-st) + ' seconds'
-            "Iterations": result.niter
-            "Optimization Run Time": result.execution_time
+            "Numer of Grid Points": m,
+            "Sample Size": n,
+            "Total Run Time": str(et-st) + ' seconds',
+            "Iterations": result.niter,
+            "Optimization Run Time": result.execution_time,
             "Number of CV iterations": j
         }
         return RMLEResult(f=reconstructions[index],alpha=alpha_list[index],alpmth='CV',T=tmat,details=None)
@@ -1598,10 +1598,10 @@ def rmle_3d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
         details = {
             "Regularization Functional": str(functional),
             "Jacobian": str(jacboian),
-            "Numer of Grid Points": m
-            "Sample Size": n
-            "Total Run Time": str(et-st) + ' seconds'
-            "Iterations": result.niter
+            "Numer of Grid Points": m,
+            "Sample Size": n,
+            "Total Run Time": str(et-st) + ' seconds',
+            "Iterations": result.niter,
             "Optimization Run Time": result.execution_time
         }
         return RMLEResult(f=result.x,alpha=alpha,alpmth='User',T=tmat,details=None)
