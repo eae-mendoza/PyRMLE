@@ -1593,7 +1593,7 @@ def rmle_3d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
         }
         return RMLEResult(f=reconstructions[index],alpha=alpha_list[index],alpmth='CV',T=tmat,details=None)
     else:
-        result = scop.minimize(functional,initial_guess,args=(alpha,n,trans_matrix_long,step_size),method='trust-constr',jac=jacobian,hess=hessian_method,constraints=[constraints],tol=tolerance,options={'verbose': 1,'maxiter': max_iter},bounds=bound)
+        result = scop.minimize(functional,initial_guess,args=(alpha,n,trans_matrix_long,step_size),method='trust-constr',jac=jacobian,hess=hessian_method,constraints=[constraints],tol=tolerance,options={'verbose': 0,'maxiter': max_iter},bounds=bound)
         et = time.time()
         details = {
             "Regularization Functional": str(functional),
