@@ -998,7 +998,7 @@ def rmle_2d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
         et = time.time()
         details = {
             "Regularization Functional": str(functional),
-            "Jacobian": str(jacboian),
+            "Jacobian": str(jacobian),
             "Numer of Grid Points": m,
             "Sample Size": n,
             "Total Run Time": str(et-st) + ' seconds',
@@ -1033,7 +1033,7 @@ def rmle_2d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
         et = time.time()
         details = {
             "Regularization Functional": str(functional),
-            "Jacobian": str(jacboian),
+            "Jacobian": str(jacobian),
             "Numer of Grid Points": m,
             "Sample Size": n,
             "Total Run Time": str(et-st) + ' seconds',
@@ -1047,7 +1047,7 @@ def rmle_2d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
         et = time.time()
         details = {
             "Regularization Functional": str(functional),
-            "Jacobian": str(jacboian),
+            "Jacobian": str(jacobian),
             "Numer of Grid Points": m,
             "Sample Size": n,
             "Total Run Time": str(et-st) + ' seconds',
@@ -1509,7 +1509,7 @@ def rmle_3d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
         et = time.time()
         details = {
             "Regularization Functional": str(functional),
-            "Jacobian": str(jacboian),
+            "Jacobian": str(jacobian),
             "Numer of Grid Points": m,
             "Sample Size": n,
             "Total Run Time": str(et-st) + ' seconds',
@@ -1548,7 +1548,7 @@ def rmle_3d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
         et = time.time()
         details = {
             "Regularization Functional": str(functional),
-            "Jacobian": str(jacboian),
+            "Jacobian": str(jacobian),
             "Numer of Grid Points": m,
             "Sample Size": n,
             "Total Run Time": str(et-st) + ' seconds',
@@ -1583,7 +1583,7 @@ def rmle_3d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
         et = time.time()
         details = {
             "Regularization Functional": str(functional),
-            "Jacobian": str(jacboian),
+            "Jacobian": str(jacobian),
             "Numer of Grid Points": m,
             "Sample Size": n,
             "Total Run Time": str(et-st) + ' seconds',
@@ -1597,7 +1597,7 @@ def rmle_3d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
         et = time.time()
         details = {
             "Regularization Functional": str(functional),
-            "Jacobian": str(jacboian),
+            "Jacobian": str(jacobian),
             "Numer of Grid Points": m,
             "Sample Size": n,
             "Total Run Time": str(et-st) + ' seconds',
