@@ -62,125 +62,127 @@ def sim_sample(n,d,x_params=None,beta_pi=None,beta_mu=None,beta_cov=None):
     else:
         return sim_sample3d(n,x_params=None,beta_pi=None,beta_mu=None,beta_cov=None)
 
-def plot_rmle(result,plt_type=None,save_fig=None):
+
+def plot_rmle(result, plt_type=None, save_fig=None):
     """ This function is used to plot the output of the rmle() function.
     Essential argument:
     result - class object RMLEResult. The function extracts all the necessary data in order to plot
     the resulting estimate for \hat{f_\bbeta}.
-    
+
     Optional arguments:
-    
+
     plt_type - default returns contour plots, accepts a string that matches for 'surf' when provided
     would plot a surface plot of \hat{f_\bbeta} or its marginal distributions.
-    
+
     save_fig - a string that serves as the file name of the figure.
     """
     dim = result.dim
     m = result.grid.ks()[0]
     step_size = result.grid.step
-    new_interval = np.array([(result.grid.interval[i-1]+result.grid.interval[i])/2 for i in range(1,len(result.grid.interval))])
+    new_interval = np.array(
+        [(result.grid.interval[i - 1] + result.grid.interval[i]) / 2 for i in range(1, len(result.grid.interval))])
     b0_scale = result.grid.b0
     b1_scale = result.grid.b1
     b2_scale = result.grid.b2
     shifts = result.grid.shifts
     if not plt_type:
         if dim == 2:
-            shaped = result.f.reshape(m,m)
-            B0=(new_interval)/b0_scale-shifts[0]
-            B1=(new_interval)/b1_scale-shifts[1]
-            contour = plt.contour(B0,B1,shaped,colors='black')
-            plt.clabel(contour,inline=True,fontsize=8)
-            plt.imshow(shaped, extent=[min(B0),max(B0), min(B1), max(B1)],cmap='OrRd', alpha=0.5)
+            shaped = result.f.reshape(m, m)
+            B0 = (new_interval) / b0_scale - shifts[0]
+            B1 = (new_interval) / b1_scale - shifts[1]
+            contour = plt.contour(B0, B1, shaped, colors='black')
+            plt.clabel(contour, inline=True, fontsize=8)
+            plt.imshow(shaped, extent=[min(B0), max(B0), min(B1), max(B1)], cmap='OrRd', alpha=0.5)
             plt.colorbar()
             if save_fig is not None:
                 plt.savefig('{filename}.png'.format(filename=save_fig))
             plt.show()
         else:
-            shaped = result.f.reshape(m,m,m)
-            f12=np.sum(shaped,axis=2)*step_size
-            f01=np.sum(shaped,axis=0)*step_size
-            f02=np.sum(shaped,axis=1)*step_size
-            B0=(new_interval)/b0_scale-shifts[0]
-            B1=(new_interval)/b1_scale-shifts[1]
-            B2=(new_interval)/b2_scale-shifts[2]
-            contour1 = plt.contour(B0,B1,f01,colors='black')
-            plt.clabel(contour1,inline=True,fontsize=8)
-            plt.imshow(f01, extent=[min(B0),max(B0), max(B1), min(B1)],cmap='OrRd', alpha=0.5)
+            shaped = result.f.reshape(m, m, m)
+            f12 = np.sum(shaped, axis=2) * step_size
+            f01 = np.sum(shaped, axis=0) * step_size
+            f02 = np.sum(shaped, axis=1) * step_size
+            B0 = (new_interval) / b0_scale - shifts[0]
+            B1 = (new_interval) / b1_scale - shifts[1]
+            B2 = (new_interval) / b2_scale - shifts[2]
+            contour1 = plt.contour(B0, B1, f01, colors='black')
+            plt.clabel(contour1, inline=True, fontsize=8)
+            plt.imshow(f01, extent=[min(B0), max(B0), min(B1), max(B1)], origin='lower', cmap='OrRd', alpha=0.5)
             plt.colorbar()
             if save_fig is not None:
-                plt.savefig('{filename}_f01.png'.format(filename=save_fig))            
+                plt.savefig('{filename}_f01.png'.format(filename=save_fig))
             plt.show()
-            contour2 = plt.contour(B0,B2,f02,colors='black')
-            plt.clabel(contour2,inline=True,fontsize=8)
-            plt.imshow(f02,extent=[min(B0),max(B0), max(B2), min(B2)],cmap='OrRd', alpha=0.5)
+            contour2 = plt.contour(B0, B2, f02, colors='black')
+            plt.clabel(contour2, inline=True, fontsize=8)
+            plt.imshow(f02, extent=[min(B0), max(B0), min(B2), max(B2)], origin='lower', cmap='OrRd', alpha=0.5)
             plt.colorbar()
             if save_fig is not None:
                 plt.savefig('{filename}_f02.png'.format(filename=save_fig))
             plt.show()
-            contour3 = plt.contour(B1,B2,f12,colors='black')
-            plt.clabel(contour3,inline=True,fontsize=8)
-            plt.imshow(f12, extent=[min(B1),max(B1), max(B2), min(B2)],cmap='OrRd', alpha=0.5)
+            contour3 = plt.contour(B1, B2, f12, colors='black')
+            plt.clabel(contour3, inline=True, fontsize=8)
+            plt.imshow(f12, extent=[min(B1), max(B1), min(B2), max(B2)], origin='lower', cmap='OrRd', alpha=0.5)
             plt.colorbar()
             if save_fig is not None:
                 plt.savefig('{filename}_f12.png'.format(filename=save_fig))
             plt.show()
     elif 'surf' in str(plt_type):
         if dim == 2:
-            shaped = result.f.reshape(m,m)
-            B0=(new_interval)/b0_scale-shifts[0]
-            B1=(new_interval)/b1_scale-shifts[1]
-            b0_axis, b1_axis = np.meshgrid(B0,B1)
+            shaped = result.f.reshape(m, m)
+            B0 = (new_interval) / b0_scale - shifts[0]
+            B1 = (new_interval) / b1_scale - shifts[1]
+            b0_axis, b1_axis = np.meshgrid(B0, B1)
             fig = plt.figure()
             ax = fig.add_subplot(projection='3d')
-            ax.plot_surface(b0_axis, b1_axis, shaped,cmap='OrRd',linewidth=0,alpha=1)
+            ax.plot_surface(b0_axis, b1_axis, shaped, cmap='OrRd', linewidth=0, alpha=1)
             ax.set_xlabel('B0')
             ax.set_ylabel('B1')
             ax.set_zlabel('f_B  ')
             ax.view_init(elev=30, azim=100)
-            fig.colorbar(plot,ax=ax)
+            fig.colorbar(plot, ax=ax)
             if save_fig is not None:
                 plt.savefig('{filename}.png'.format(filename=save_fig))
             plt.show()
         else:
-            shaped = result.f.reshape(m,m,m)
-            f12=np.sum(shaped,axis=2)*step_size
-            f01=np.sum(shaped,axis=0)*step_size
-            f02=np.sum(shaped,axis=1)*step_size
-            B0=(new_interval)/b0_scale-shifts[0]
-            B1=(new_interval)/b1_scale-shifts[1]
-            B2=(new_interval)/b2_scale-shifts[2]
-            b0_axis, b1_axis = np.meshgrid(B0,B1)
+            shaped = result.f.reshape(m, m, m)
+            f12 = np.sum(shaped, axis=2) * step_size
+            f01 = np.sum(shaped, axis=0) * step_size
+            f02 = np.sum(shaped, axis=1) * step_size
+            B0 = (new_interval) / b0_scale - shifts[0]
+            B1 = (new_interval) / b1_scale - shifts[1]
+            B2 = (new_interval) / b2_scale - shifts[2]
+            b0_axis, b1_axis = np.meshgrid(B0, B1)
             fig = plt.figure()
             ax = fig.add_subplot(projection='3d')
-            plot = ax.plot_surface(b0_axis, b1_axis, f01,cmap='OrRd',linewidth=0,alpha=1)
+            plot = ax.plot_surface(b0_axis, b1_axis, f01, cmap='OrRd', linewidth=0, alpha=1)
             ax.set_xlabel('B0')
             ax.set_ylabel('B1')
             ax.set_zlabel('f_B  ')
-            fig.colorbar(plot,ax=ax)
+            fig.colorbar(plot, ax=ax)
             ax.view_init(elev=30, azim=100)
             if save_fig is not None:
                 plt.savefig('{filename}_f01.png'.format(filename=save_fig))
             plt.show()
-            b0_axis, b2_axis = np.meshgrid(B0,B2)
+            b0_axis, b2_axis = np.meshgrid(B0, B2)
             fig = plt.figure()
             ax = fig.add_subplot(projection='3d')
-            plot = ax.plot_surface(b0_axis, b2_axis, f02,cmap='OrRd',linewidth=0,alpha=1)
+            plot = ax.plot_surface(b0_axis, b2_axis, f02, cmap='OrRd', linewidth=0, alpha=1)
             ax.set_xlabel('B0')
             ax.set_ylabel('B2')
             ax.set_zlabel('f_B  ')
             ax.view_init(elev=30, azim=100)
-            fig.colorbar(plot,ax=ax)
+            fig.colorbar(plot, ax=ax)
             if save_fig is not None:
                 plt.savefig('{filename}_f02.png'.format(filename=save_fig))
             plt.show()
-            b1_axis, b2_axis = np.meshgrid(B1,B2)
+            b1_axis, b2_axis = np.meshgrid(B1, B2)
             fig = plt.figure()
             ax = fig.add_subplot(projection='3d')
-            plot = ax.plot_surface(b1_axis, b2_axis, f12,cmap='OrRd',linewidth=0,alpha=1)
+            plot = ax.plot_surface(b1_axis, b2_axis, f12, cmap='OrRd', linewidth=0, alpha=1)
             ax.set_xlabel('B1')
             ax.set_ylabel('B2')
             ax.set_zlabel('f_B  ')
-            fig.colorbar(plot,ax=ax)
+            fig.colorbar(plot, ax=ax)
             ax.view_init(elev=30, azim=100)
             if save_fig is not None:
                 plt.savefig('{filename}_f12.png'.format(filename=save_fig))
