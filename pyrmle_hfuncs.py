@@ -4,6 +4,7 @@ import random
 import numpy as np
 import time
 from sklearn.cluster import KMeans
+from mpl_toolkits.mplot3d import Axes3D
 
 class RMLEResult:
     """ Class used to store the result of the rmle() function. 
@@ -595,12 +596,6 @@ def transmatrix_2d(sample,grid):
     L = L[~np.all(L==0, axis=1)]
     return tmatrix(Tmat=L,grid=grid,scaled_sample=xy_sample,sample=sample.sample)
 
-def likelihood_l(f,L,n):
-    """ This function is used to evaluate the loss function used in cross validation. """
-    L=L.reshape(n,len(f))
-    f[f<0]=10**-16
-    val=np.log(np.dot(L,f))
-    return -sum(val)
 
 def likelihood(f,n,L_mat_long):
     """ This function is the log-likelihood functional without a regularization 
@@ -754,6 +749,24 @@ def updt(total, progress):
     sys.stdout.write(text)
     sys.stdout.flush()
     
+def updt_cv(total, progress,time_start):
+
+    """
+    Displays an indication of the current run-time and max possible iterations.
+    
+    Modified code from source.
+    
+    Source: https://stackoverflow.com/questions/3160699/python-progress-bar
+    
+    """
+    time_elapsed = time.time() - time_start
+    max_iters, status = total, ""
+    if progress >= max_iters:
+        progress, max_iters = max_iters, "\r\n"
+    text = "\r{} / {} possible iterations. Time elapsed: {} seconds. {}".format(progress,total,time_elapsed,status)
+    sys.stdout.write(text)
+    sys.stdout.flush()
+    
 def select_cluster(y,kmean_obj,l2s):
     """ This function is used to select which cluster to not discard when implementing
     the shifting algorithm.
@@ -844,7 +857,7 @@ def cv_index(n,k):
         indices=np.arange(0,n,n_k)
     return indices
 
-def cv_loss(a,alphas,n,k,progress,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound):
+def cv_loss(a,alphas,n,k,progress,time_start,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound):
     """ This fucntion is used to compute for the loss function in cross-validation. """
     indices=cv_index(n,k)
     f_n=scop.minimize(functional,initial_guess,args=(a,n,trans_matrix_long,step_size),method='trust-constr',jac=jacobian,hess=hessian_method,constraints=[constraints],tol=tolerance,options={'verbose': False,'maxiter': max_iter},bounds=bound)
@@ -869,10 +882,10 @@ def cv_loss(a,alphas,n,k,progress,total,functional,initial_guess,trans_matrix,tr
         fs.append(val_f)
         loss+=likelihood_l(val_f,inv_trans_matrix_slice_long,n_i)
         j+=1
-        updt(total,j)
+        updt_cv(total,j,time_start)
     return f_n.x,loss/k,j
 
-def quarter_selector(alphas,n,k,progress,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound):
+def quarter_selector(alphas,n,k,progress,time_start,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound):
     """ This function is the implementation of the modified k-fold cross validation method. """
     alphas=alphas
     len_a =len(alphas)
@@ -880,8 +893,8 @@ def quarter_selector(alphas,n,k,progress,total,functional,initial_guess,trans_ma
     p,q=random.randint(0,quart_a-1),random.randint(quart_a,len_a-1)
     a_p=alphas[p]
     a_q=alphas[q]
-    val1=cv_loss(a_p,alphas,n,k,progress,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
-    val2=cv_loss(a_q,alphas,n,k,progress,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
+    val1=cv_loss(a_p,alphas,n,k,progress,time_start,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
+    val2=cv_loss(a_q,alphas,n,k,progress,time_start,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
     alphas=np.delete(alphas,[p,q])
     if val1[1] < val2[1]:
         alphas=alphas[:quart_a-2]
@@ -1019,23 +1032,24 @@ def rmle_2d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
         reconstructions=[]
         alpha_list=[]
         trans_matrix=sample_shuffle(trans_matrix)
+        time_start = time.time()
         j=0
         total = np.ceil(len(alphas)*np.log(2/len(alphas))/np.log(0.5))
         while len(alphas)>=2:
-            val=quarter_selector(alphas,n,k,j,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
+            val=quarter_selector(alphas,n,k,j,time_start,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
             lhood.append(val[2])
             reconstructions.append(val[0])
             j=val[3]
             alphas=val[1]
             alpha_list.append(val[4])
         for a in alphas:
-            val=cv_loss(a,alphas,n,k,j,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
+            val=cv_loss(a,alphas,n,k,j,time_start,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
             lhood.append(val[1])
             reconstructions.append(val[0])
             alpha_list.append(a)
             j=val[2]
         index=np.int(np.where(lhood==np.min(lhood))[0])
-        updt(total,total)
+        updt_cv(total,total,time_start)
         et = time.time()
         details = {
             "Regularization Functional": str(functional),
@@ -1398,6 +1412,12 @@ def jac_entropy_3d(f,alpha,n,L_mat_long,step):
     val=L_mat.T/denom
     return -val.T.sum(axis=0)/n+alpha*step**3*(np.log(f)+1)
 
+def likelihood_l(f,L,n):
+    L=L.reshape(n,len(f))
+    f[f<0]=10**-16
+    val=np.log(np.dot(L,f))
+    return -sum(val)
+
 
 def rmle_3d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=None,hessian_method=None,constraints=None,tolerance=None,max_iter=None,bounds=None):
     """ This function is a sub-function of rmle(). This is a wrapper function for the SciPy Optimize minimize()
@@ -1569,23 +1589,24 @@ def rmle_3d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
         reconstructions=[]
         alpha_list=[]
         trans_matrix=sample_shuffle(trans_matrix)
+        time_start = time.time()
         j=0
         total = np.ceil(len(alphas)*np.log(2/len(alphas))/np.log(0.75))
         while len(alphas)>=2:
-            val=quarter_selector(alphas,n,k,j,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
+            val=quarter_selector(alphas,n,k,j,time_start,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
             lhood.append(val[2])
             reconstructions.append(val[0])
             j=val[3]
             alphas=val[1]
             alpha_list.append(val[4])
         for a in alphas:
-            val=cv_loss(a,alphas,n,k,j,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
+            val=cv_loss(a,alphas,n,k,j,time_start,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
             lhood.append(val[1])
             reconstructions.append(val[0])
             alpha_list.append(a)
             j=val[2]
         index=np.int(np.where(lhood==np.min(lhood))[0])
-        updt(total,total)
+        updt_cv(total,total,time_start)
         et = time.time()
         details = {
             "Regularization Functional": str(functional),
