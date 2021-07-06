@@ -595,6 +595,12 @@ def transmatrix_2d(sample,grid):
     L = L[~np.all(L==0, axis=1)]
     return tmatrix(Tmat=L,grid=grid,scaled_sample=xy_sample,sample=sample.sample)
 
+def likelihood_l(f,L,n):
+    """ This function is used to evaluate the loss function used in cross validation. """
+    L=L.reshape(n,len(f))
+    f[f<0]=10**-16
+    val=np.log(np.dot(L,f))
+    return -sum(val)
 
 def likelihood(f,n,L_mat_long):
     """ This function is the log-likelihood functional without a regularization 
