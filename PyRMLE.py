@@ -105,6 +105,7 @@ def plot_rmle(result, plt_type=None, save_fig=None):
             B0 = (new_interval) / b0_scale - shifts[0]
             B1 = (new_interval) / b1_scale - shifts[1]
             B2 = (new_interval) / b2_scale - shifts[2]
+            plt.figure(1)
             contour1 = plt.contour(B0, B1, f01, colors='black')
             plt.clabel(contour1, inline=True, fontsize=8)
             plt.imshow(f01, extent=[min(B0), max(B0), min(B1), max(B1)], origin='lower', cmap='OrRd', alpha=0.5)
@@ -112,6 +113,7 @@ def plot_rmle(result, plt_type=None, save_fig=None):
             if save_fig is not None:
                 plt.savefig('{filename}_f01.png'.format(filename=save_fig))
             plt.show()
+            plt.figure(2)
             contour2 = plt.contour(B0, B2, f02, colors='black')
             plt.clabel(contour2, inline=True, fontsize=8)
             plt.imshow(f02, extent=[min(B0), max(B0), min(B2), max(B2)], origin='lower', cmap='OrRd', alpha=0.5)
@@ -119,6 +121,7 @@ def plot_rmle(result, plt_type=None, save_fig=None):
             if save_fig is not None:
                 plt.savefig('{filename}_f02.png'.format(filename=save_fig))
             plt.show()
+            plt.figure(3)
             contour3 = plt.contour(B1, B2, f12, colors='black')
             plt.clabel(contour3, inline=True, fontsize=8)
             plt.imshow(f12, extent=[min(B1), max(B1), min(B2), max(B2)], origin='lower', cmap='OrRd', alpha=0.5)
@@ -132,7 +135,7 @@ def plot_rmle(result, plt_type=None, save_fig=None):
             B0 = (new_interval) / b0_scale - shifts[0]
             B1 = (new_interval) / b1_scale - shifts[1]
             b0_axis, b1_axis = np.meshgrid(B0, B1)
-            fig = plt.figure()
+            fig = plt.figure(1)
             ax = fig.add_subplot(projection='3d')
             ax.plot_surface(b0_axis, b1_axis, shaped, cmap='OrRd', linewidth=0, alpha=1)
             ax.set_xlabel('B0')
@@ -152,7 +155,7 @@ def plot_rmle(result, plt_type=None, save_fig=None):
             B1 = (new_interval) / b1_scale - shifts[1]
             B2 = (new_interval) / b2_scale - shifts[2]
             b0_axis, b1_axis = np.meshgrid(B0, B1)
-            fig = plt.figure()
+            fig = plt.figure(1)
             ax = fig.add_subplot(projection='3d')
             plot = ax.plot_surface(b0_axis, b1_axis, f01, cmap='OrRd', linewidth=0, alpha=1)
             ax.set_xlabel('B0')
@@ -164,7 +167,7 @@ def plot_rmle(result, plt_type=None, save_fig=None):
                 plt.savefig('{filename}_f01.png'.format(filename=save_fig))
             plt.show()
             b0_axis, b2_axis = np.meshgrid(B0, B2)
-            fig = plt.figure()
+            fig = plt.figure(2)
             ax = fig.add_subplot(projection='3d')
             plot = ax.plot_surface(b0_axis, b2_axis, f02, cmap='OrRd', linewidth=0, alpha=1)
             ax.set_xlabel('B0')
@@ -176,7 +179,7 @@ def plot_rmle(result, plt_type=None, save_fig=None):
                 plt.savefig('{filename}_f02.png'.format(filename=save_fig))
             plt.show()
             b1_axis, b2_axis = np.meshgrid(B1, B2)
-            fig = plt.figure()
+            fig = plt.figure(3)
             ax = fig.add_subplot(projection='3d')
             plot = ax.plot_surface(b1_axis, b2_axis, f12, cmap='OrRd', linewidth=0, alpha=1)
             ax.set_xlabel('B1')
