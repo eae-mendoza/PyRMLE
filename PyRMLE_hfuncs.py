@@ -48,7 +48,7 @@ class RMLEResult:
         # Creates the new intervals which corresponds to center of the individual grid-boxes or cubes.
         B0 = self.grid.b0_grid_points
         B1 = self.grid.b1_grid_points
-        B2 = self.grid.b2_grid_pointsgr
+        B2 = self.grid.b2_grid_points
         if self.dim ==2:
             # Converts the index i obtained previously into grid locations based on the 2-dimensional np.array.
             k = self.grid.ks()[0]
@@ -1517,7 +1517,7 @@ def rmle_3d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
             "Optimization Run Time": result.execution_time,
             "Number of Shifts Applied": num_shifts,
         }
-        return RMLEResult(f=reconstructions[min_index],alpha=alpha,alpmth='User',T=shifted_tmatrix,details=None)
+        return RMLEResult(f=reconstructions[min_index],alpha=alpha,alpmth='User',T=shifted_tmatrix,details=details)
     if alpha=='Lepskii' or alpha=='lepskii':
         r=1.2
         alphas=alpha_lep(70,n,r)
@@ -1556,7 +1556,7 @@ def rmle_3d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
             "Optimization Run Time": result.execution_time,
             "Number of Lepskii iterations": len(alphas)
         }
-        return RMLEResult(f=reconstructions[index],alpha=alphas[index],alpmth='Lepskii',T=tmat,details=None)
+        return RMLEResult(f=reconstructions[index],alpha=alphas[index],alpmth='Lepskii',T=tmat,details=details)
     if alpha=='cv' or alpha == 'CV':
         alphas=alpha_vals(step_size*3,30)
         lhood=[]
@@ -1591,9 +1591,9 @@ def rmle_3d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
             "Optimization Run Time": result.execution_time,
             "Number of CV iterations": j
         }
-        return RMLEResult(f=reconstructions[index],alpha=alpha_list[index],alpmth='CV',T=tmat,details=None)
+        return RMLEResult(f=reconstructions[index],alpha=alpha_list[index],alpmth='CV',T=tmat,details=details)
     else:
-        result = scop.minimize(functional,initial_guess,args=(alpha,n,trans_matrix_long,step_size),method='trust-constr',jac=jacobian,hess=hessian_method,constraints=[constraints],tol=tolerance,options={'verbose': 1,'maxiter': max_iter},bounds=bound)
+        result = scop.minimize(functional,initial_guess,args=(alpha,n,trans_matrix_long,step_size),method='trust-constr',jac=jacobian,hess=hessian_method,constraints=[constraints],tol=tolerance,options={'verbose': 0,'maxiter': max_iter},bounds=bound)
         et = time.time()
         details = {
             "Regularization Functional": str(functional),
@@ -1604,7 +1604,7 @@ def rmle_3d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
             "Iterations": result.niter,
             "Optimization Run Time": result.execution_time
         }
-        return RMLEResult(f=result.x,alpha=alpha,alpmth='User',T=tmat,details=None)
+        return RMLEResult(f=result.x,alpha=alpha,alpmth='User',T=tmat,details=details)
     
 def scale_sample(xy_sample,grid):
     """ This function is used to apply the shifts and scaling to the sample. """
