@@ -965,10 +965,10 @@ def rmle_2d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
     if '3d' in str(functional.__name__):
         raise ValueError("The 2-dimensional implementation requires a matching 2-dimensional functional. \
 Try to supply any of the accepted functional values: {likelihood, norm_sq, sobolev, entropy}")
-    if not initial_guess:
-        initial_guess = np.zeros(m)+0.000001
-    else:
+    if initial_guess is not None:
         initial_guess = initial_guess
+    else:
+        initial_guess = initial_gauss(tmat.grid)
     if not jacobian:
         if functional == likelihood:
             jacobian = jac_likelihood
@@ -1489,7 +1489,7 @@ Try to supply any of the accepted functional values: {likelihood_3d, norm_sq_3d,
     if initial_guess is not None:
         initial_guess = initial_guess
     else:
-        initial_guess = np.zeros(m)+0.000001
+        initial_guess = initial_gauss(tmat.grid)
     if not jacobian:
         if functional == sobolev_3d:
             jacobian = jac_sobolev_3d
