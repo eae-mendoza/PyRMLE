@@ -1,5 +1,6 @@
 from pyrmle_hfuncs import *
-    
+ 
+ 
 def grid_set(num_grid_points,dim,B0_range=None,B1_range=None,B2_range=None):
     # Check if custom grid ranges are declared by the user, else use the default 
     if B0_range is not None:
@@ -85,6 +86,7 @@ def plot_rmle(result, plt_type=None, save_fig=None):
     b1_scale = result.grid.b1
     b2_scale = result.grid.b2
     shifts = result.grid.shifts
+    plt_matches = ['surf','sf','surface','3d']
     if not plt_type:
         if dim == 2:
             shaped = result.f.reshape(m, m)
@@ -129,7 +131,7 @@ def plot_rmle(result, plt_type=None, save_fig=None):
             if save_fig is not None:
                 plt.savefig('{filename}_f12.png'.format(filename=save_fig))
             plt.show()
-    elif 'surf' in str(plt_type):
+    elif any(c in str.lower(str(plt_type)) for c in plt_matches):
         if dim == 2:
             shaped = result.f.reshape(m, m)
             B0 = (new_interval) / b0_scale - shifts[0]
@@ -190,3 +192,4 @@ def plot_rmle(result, plt_type=None, save_fig=None):
             if save_fig is not None:
                 plt.savefig('{filename}_f12.png'.format(filename=save_fig))
             plt.show()
+
