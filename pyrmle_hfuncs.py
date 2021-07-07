@@ -1028,7 +1028,6 @@ Try to supply any of the accepted functional values: {likelihood, norm_sq, sobol
             "Numer of Grid Points": m,
             "Sample Size": n,
             "Total Run Time": str(et-st) + ' seconds',
-            "Iterations": result.niter,
             "Optimization Run Time": result.execution_time,
             "Numer of Lepskii iterations": len(alphas)
         }
@@ -1064,7 +1063,6 @@ Try to supply any of the accepted functional values: {likelihood, norm_sq, sobol
             "Numer of Grid Points": m,
             "Sample Size": n,
             "Total Run Time": str(et-st) + ' seconds',
-            "Iterations": result.niter,
             "Optimization Run Time": result.execution_time,
             "Number of CV iterations": j,
         }
@@ -1477,10 +1475,10 @@ def rmle_3d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
     if '3d' not in str(functional.__name__):
         raise ValueError("The 3-dimensional implementation requires a matching 3-dimensional functional. \
 Try to supply any of the accepted functional values: {likelihood_3d, norm_sq_3d, sobolev_3d, entropy_3d}")
-    if not initial_guess:
-        initial_guess = np.zeros(m)+0.000001
-    else:
+    if initial_guess is not None:
         initial_guess = initial_guess
+    else:
+        initial_guess = np.zeros(m)+0.000001
     if not jacobian:
         if functional == sobolev_3d:
             jacobian = jac_sobolev_3d
@@ -1551,7 +1549,6 @@ Try to supply any of the accepted functional values: {likelihood_3d, norm_sq_3d,
             "Numer of Grid Points": m,
             "Sample Size": n,
             "Total Run Time": str(et-st) + ' seconds',
-            "Iterations": result.niter,
             "Optimization Run Time": result.execution_time,
             "Number of Shifts Applied": num_shifts,
         }
@@ -1590,7 +1587,6 @@ Try to supply any of the accepted functional values: {likelihood_3d, norm_sq_3d,
             "Numer of Grid Points": m,
             "Sample Size": n,
             "Total Run Time": str(et-st) + ' seconds',
-            "Iterations": result.niter,
             "Optimization Run Time": result.execution_time,
             "Number of Lepskii iterations": len(alphas)
         }
@@ -1626,7 +1622,6 @@ Try to supply any of the accepted functional values: {likelihood_3d, norm_sq_3d,
             "Numer of Grid Points": m,
             "Sample Size": n,
             "Total Run Time": str(et-st) + ' seconds',
-            "Iterations": result.niter,
             "Optimization Run Time": result.execution_time,
             "Number of CV iterations": j
         }
