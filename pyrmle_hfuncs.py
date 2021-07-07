@@ -3,6 +3,7 @@ import scipy.optimize as scop
 import random
 import numpy as np
 import time
+import sys
 from sklearn.cluster import KMeans
 from mpl_toolkits.mplot3d import Axes3D
 
@@ -894,11 +895,12 @@ def quarter_selector(alphas,n,k,progress,time_start,total,functional,initial_gue
     a_p=alphas[p]
     a_q=alphas[q]
     val1=cv_loss(a_p,alphas,n,k,progress,time_start,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
-    val2=cv_loss(a_q,alphas,n,k,progress,time_start,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
+    progress_updt = val1[2]
+    val2=cv_loss(a_q,alphas,n,k,progress_updt,time_start,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
     alphas=np.delete(alphas,[p,q])
     if val1[1] < val2[1]:
         alphas=alphas[:quart_a-2]
-        return val1[0],alphas,val1[1],val1[2],a_p
+        return val1[0],alphas,val1[1],val2[2],a_p
     else:
         alphas=alphas[quart_a-1:len_a-2]
         return val2[0],alphas,val2[1],val2[2],a_q
@@ -947,6 +949,11 @@ def rmle_2d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
     step_size = tmat.grid.step
     trans_matrix_long = np.ravel(tmat.Tmat)
     trans_matrix = tmat.Tmat
+    lepskii_matches = ['lep','lepskii','lepskii\'s principle', 'lp']
+    cv_matches = ['cv','cross','cross val', 'validation','crossvalidation','cross-validation']
+    if '3d' in str(functional.__name__):
+        raise ValueError("The 2-dimensional implementation requires a matching 2-dimensional functional. \
+Try to supply any of the accepted functional values: {likelihood, norm_sq, sobolev, entropy}")
     if not initial_guess:
         initial_guess = np.zeros(m)+0.000001
     else:
@@ -972,11 +979,11 @@ def rmle_2d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
     else:
         constraints = constraints
     if not tolerance:
-        tolerance = 1e-6
+        tolerance = 1e-4
     else:
         tolerance = tolerance
     if not max_iter:
-        max_iter = 100
+        max_iter = 10*m
     else: 
         max_iter = max_iter
     if not bounds:
@@ -987,7 +994,7 @@ def rmle_2d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
         k = 10
     else:
         k = k
-    if alpha=='Lepskii' or alpha=='lepskii':
+    if any(c in str.lower(str(alpha)) for c in lepskii_matches):
         r=1.2
         alphas=alpha_lep(70,n,r)
         reconstructions=[]
@@ -1016,8 +1023,8 @@ def rmle_2d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
         index=index_finder(diffs)
         et = time.time()
         details = {
-            "Regularization Functional": str(functional),
-            "Jacobian": str(jacobian),
+            "Regularization Functional": str(functional.__name__),
+            "Jacobian": str(jacobian.__name__),
             "Numer of Grid Points": m,
             "Sample Size": n,
             "Total Run Time": str(et-st) + ' seconds',
@@ -1026,7 +1033,7 @@ def rmle_2d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
             "Numer of Lepskii iterations": len(alphas)
         }
         return RMLEResult(f=reconstructions[index],alpha=alphas[index],alpmth='Lepskii',T=tmat,details=details)
-    if alpha=='cv' or alpha == 'CV':
+    if any(c in str.lower(str(alpha)) for c in cv_matches):
         alphas=alpha_vals(step_size*3,30)
         lhood=[]
         reconstructions=[]
@@ -1052,8 +1059,8 @@ def rmle_2d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
         updt_cv(total,total,time_start)
         et = time.time()
         details = {
-            "Regularization Functional": str(functional),
-            "Jacobian": str(jacobian),
+            "Regularization Functional": str(functional.__name__),
+            "Jacobian": str(jacobian.__name__),
             "Numer of Grid Points": m,
             "Sample Size": n,
             "Total Run Time": str(et-st) + ' seconds',
@@ -1066,8 +1073,8 @@ def rmle_2d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
         result = scop.minimize(functional,initial_guess,args=(alpha,n,trans_matrix_long,step_size),method='trust-constr',jac=jacobian,hess=hessian_method,constraints=[constraints],tol=tolerance,options={'verbose': 0,'maxiter': max_iter},bounds=bound)
         et = time.time()
         details = {
-            "Regularization Functional": str(functional),
-            "Jacobian": str(jacobian),
+            "Regularization Functional": str(functional.__name__),
+            "Jacobian": str(jacobian.__name__),
             "Numer of Grid Points": m,
             "Sample Size": n,
             "Total Run Time": str(et-st) + ' seconds',
@@ -1465,6 +1472,11 @@ def rmle_3d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
     trans_matrix = tmat.Tmat
     step_size = tmat.grid.step
     sample = tmat.sample.copy()
+    lepskii_matches = ['lep','lepskii','lepskii\'s principle', 'lp']
+    cv_matches = ['cv','cross','cross val', 'validation','crossvalidation','cross-validation']
+    if '3d' not in str(functional.__name__):
+        raise ValueError("The 3-dimensional implementation requires a matching 3-dimensional functional. \
+Try to supply any of the accepted functional values: {likelihood_3d, norm_sq_3d, sobolev_3d, entropy_3d}")
     if not initial_guess:
         initial_guess = np.zeros(m)+0.000001
     else:
@@ -1490,11 +1502,11 @@ def rmle_3d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
     else:
         constraints = constraints
     if not tolerance:
-        tolerance = 1e-16
+        tolerance = 1e-4
     else:
         tolerance = tolerance
     if not max_iter:
-        max_iter = 100
+        max_iter = 10*m
     else: 
         max_iter = max_iter
     if not bounds:
@@ -1534,8 +1546,8 @@ def rmle_3d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
         shifted_tmatrix = shift_tmatrix_list[min_index]
         et = time.time()
         details = {
-            "Regularization Functional": str(functional),
-            "Jacobian": str(jacobian),
+            "Regularization Functional": str(functional.__name__),
+            "Jacobian": str(jacobian.__name__),
             "Numer of Grid Points": m,
             "Sample Size": n,
             "Total Run Time": str(et-st) + ' seconds',
@@ -1544,7 +1556,7 @@ def rmle_3d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
             "Number of Shifts Applied": num_shifts,
         }
         return RMLEResult(f=reconstructions[min_index],alpha=alpha,alpmth='User',T=shifted_tmatrix,details=details)
-    if alpha=='Lepskii' or alpha=='lepskii':
+    if any(c in str.lower(str(alpha)) for c in lepskii_matches):
         r=1.2
         alphas=alpha_lep(70,n,r)
         reconstructions=[]
@@ -1573,8 +1585,8 @@ def rmle_3d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
         index=index_finder(diffs)
         et = time.time()
         details = {
-            "Regularization Functional": str(functional),
-            "Jacobian": str(jacobian),
+            "Regularization Functional": str(functional.__name__),
+            "Jacobian": str(jacobian.__name__),
             "Numer of Grid Points": m,
             "Sample Size": n,
             "Total Run Time": str(et-st) + ' seconds',
@@ -1583,7 +1595,7 @@ def rmle_3d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
             "Number of Lepskii iterations": len(alphas)
         }
         return RMLEResult(f=reconstructions[index],alpha=alphas[index],alpmth='Lepskii',T=tmat,details=details)
-    if alpha=='cv' or alpha == 'CV':
+    if any(c in str.lower(str(alpha)) for c in cv_matches):
         alphas=alpha_vals(step_size*3,30)
         lhood=[]
         reconstructions=[]
@@ -1609,8 +1621,8 @@ def rmle_3d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
         updt_cv(total,total,time_start)
         et = time.time()
         details = {
-            "Regularization Functional": str(functional),
-            "Jacobian": str(jacobian),
+            "Regularization Functional": str(functional.__name__),
+            "Jacobian": str(jacobian.__name__),
             "Numer of Grid Points": m,
             "Sample Size": n,
             "Total Run Time": str(et-st) + ' seconds',
@@ -1623,8 +1635,8 @@ def rmle_3d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
         result = scop.minimize(functional,initial_guess,args=(alpha,n,trans_matrix_long,step_size),method='trust-constr',jac=jacobian,hess=hessian_method,constraints=[constraints],tol=tolerance,options={'verbose': 0,'maxiter': max_iter},bounds=bound)
         et = time.time()
         details = {
-            "Regularization Functional": str(functional),
-            "Jacobian": str(jacobian),
+            "Regularization Functional": str(functional.__name__),
+            "Jacobian": str(jacobian.__name__),
             "Numer of Grid Points": m,
             "Sample Size": n,
             "Total Run Time": str(et-st) + ' seconds',
