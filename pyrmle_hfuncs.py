@@ -362,13 +362,24 @@ def shape(result):
     else:
         return f.reshape(m,m,m)
     
-def dt_mtx(interval,shift):
-    x1=interval*shift[0]
-    x2=interval*shift[1]
-    coord_mtx=np.zeros((len(x1),len(x2),2))
-    for i in range(0,len(x1)):
-        coord_mtx[:,i]=np.array((x1,full(len(x1),x2[i]))).T
-    return coord_mtx
+def initial_gauss(grid):
+    """ This function generates an initial guess as a gaussian distribution with mean 0 and variance 1 """
+    dim = grid.dim
+    x_ = grid.b0_grid_points
+    y_ = grid.b1_grid_points
+    z_ = grid.b2_grid_points
+    sig = 1
+    mu = 0
+    if dim == 2:
+        x,y = np.meshgrid(x_, y_)
+        dst = np.sqrt(x*x+y*y)
+        gauss = np.exp(-( (dst-mu)**2 / ( 2.0 * sig**2 ) ) )
+        return np.ravel(gauss)
+    elif dim == 3:
+        x,y,z = np.meshgrid(x_, y_, z_, indexing='xy')
+        dst = np.sqrt(x*x+y*y+z*z)
+        gauss = np.exp(-( (dst-mu)**2 / ( 2.0 * sig**2 ) ) )
+        return np.ravel(gauss)
 
 def sim_sample2d(n,x_params=None,beta_pi=None,beta_mu=None,beta_cov=None):
     # Checks if user declares any parameters to use.
