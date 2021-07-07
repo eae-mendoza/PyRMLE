@@ -1,6 +1,5 @@
 from pyrmle_hfuncs import *
- 
- 
+
 def grid_set(num_grid_points,dim,B0_range=None,B1_range=None,B2_range=None):
     # Check if custom grid ranges are declared by the user, else use the default 
     if B0_range is not None:
@@ -192,4 +191,3 @@ def plot_rmle(result, plt_type=None, save_fig=None):
             if save_fig is not None:
                 plt.savefig('{filename}_f12.png'.format(filename=save_fig))
             plt.show()
-
