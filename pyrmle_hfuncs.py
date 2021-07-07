@@ -907,7 +907,7 @@ def quarter_selector(alphas,n,k,progress,time_start,total,functional,initial_gue
     
 def rmle_2d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=None,hessian_method=None,constraints=None,tolerance=None,max_iter=None,bounds=None):
     """ This function is a sub-function of rmle(). This is a wrapper function for the SciPy Optimize minimize()
-    function. It has 3 essential arguments which are: {functional, alha, tmat}. 
+    function. It has 3 essential arguments which are: {functional, alpha, tmat}. 
     
     Essential/Positional arguments:
     
@@ -1041,8 +1041,8 @@ Try to supply any of the accepted functional values: {likelihood, norm_sq, sobol
         trans_matrix=sample_shuffle(trans_matrix)
         time_start = time.time()
         j=0
-        total = np.ceil(len(alphas)*np.log(2/len(alphas))/np.log(0.5))
-        while len(alphas)>=2:
+        total = np.ceil((np.log(4)-np.log(len(alphas)))/(0.25*np.log(0.25)+0.75*np.log(0.75)))*2 * k
+        while len(alphas)> 4:
             val=quarter_selector(alphas,n,k,j,time_start,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
             lhood.append(val[2])
             reconstructions.append(val[0])
@@ -1428,7 +1428,7 @@ def likelihood_l(f,L,n):
 
 def rmle_3d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=None,hessian_method=None,constraints=None,tolerance=None,max_iter=None,bounds=None):
     """ This function is a sub-function of rmle(). This is a wrapper function for the SciPy Optimize minimize()
-    function. It has 3 essential arguments which are: {functional, alha, tmat}. 
+    function. It has 3 essential arguments which are: {functional, alpha, tmat}. 
     
     Essential/Positional arguments:
     
@@ -1603,8 +1603,8 @@ Try to supply any of the accepted functional values: {likelihood_3d, norm_sq_3d,
         trans_matrix=sample_shuffle(trans_matrix)
         time_start = time.time()
         j=0
-        total = np.ceil(len(alphas)*np.log(2/len(alphas))/np.log(0.75))
-        while len(alphas)>=2:
+        total = np.ceil((np.log(4)-np.log(len(alphas)))/(0.25*np.log(0.25)+0.75*np.log(0.75)))*2 * k
+        while len(alphas) > 4:
             val=quarter_selector(alphas,n,k,j,time_start,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
             lhood.append(val[2])
             reconstructions.append(val[0])
