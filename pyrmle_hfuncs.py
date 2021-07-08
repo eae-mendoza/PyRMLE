@@ -990,7 +990,7 @@ Try to supply any of the accepted functional values: {likelihood, norm_sq, sobol
     else:
         constraints = constraints
     if not tolerance:
-        tolerance = 1e-4
+        tolerance = 1e-8
     else:
         tolerance = tolerance
     if not max_iter:
@@ -1511,7 +1511,7 @@ Try to supply any of the accepted functional values: {likelihood_3d, norm_sq_3d,
     else:
         constraints = constraints
     if not tolerance:
-        tolerance = 1e-4
+        tolerance = 1e-8
     else:
         tolerance = tolerance
     if not max_iter:
