@@ -58,9 +58,9 @@ def transmatrix(xy_sample,grid):
 
 def sim_sample(n,d,x_params=None,beta_pi=None,beta_mu=None,beta_cov=None):
     if d == 2:
-        return sim_sample2d(n,x_params=None,beta_pi=None,beta_mu=None,beta_cov=None)
+        return sim_sample2d(n,x_params,beta_pi,beta_mu,beta_cov)
     else:
-        return sim_sample3d(n,x_params=None,beta_pi=None,beta_mu=None,beta_cov=None)
+        return sim_sample3d(n,x_params,beta_pi,beta_mu,beta_cov)
 
 
 def plot_rmle(result, plt_type=None, save_fig=None):
