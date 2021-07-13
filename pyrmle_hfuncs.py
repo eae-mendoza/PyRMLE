@@ -162,18 +162,18 @@ class RMLEResult:
             return modes[:6]
     def ev(self):
         # Creates the new intervals which corresponds to center of the individual grid-boxes or cubes.
-        B0 = self.grid.b0_grid_points
-        B1 = self.grid.b1_grid_points
-        B2 = self.grid.b2_grid_points
+        B0 = (self.grid.b0_grid_points+self.grid.shifts[0])*self.grid.b0
+        B1 = (self.grid.b1_grid_points+self.grid.shifts[1])*self.grid.b0
+        B2 = (self.grid.b2_grid_points+self.grid.shifts[2])*self.grid.b0
         # Initialize the list for expected values
         expected_vals = []
         m = self.grid.ks()[0]
         # Call \hat{f_\beta}
         f = self.f
         # Declare the step size of the grid based on the grid used to create the transformation matrix
-        b0_step = self.grid.step/self.grid.b0
-        b1_step = self.grid.step/self.grid.b1
-        b2_step = self.grid.step/self.grid.b2
+        b0_step = self.grid.step
+        b1_step = self.grid.step
+        b2_step = self.grid.step
         if self.dim == 2:
             # Reshape \hat{f_\beta} to the it's 2-dimensional np.array form
             f_shaped = f.reshape(m,m)
