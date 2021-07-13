@@ -93,7 +93,7 @@ def plot_rmle(result, plt_type=None, save_fig=None):
             B1 = (new_interval) / b1_scale - shifts[1]
             contour = plt.contour(B0, B1, shaped, colors='black')
             plt.clabel(contour, inline=True, fontsize=8)
-            plt.imshow(shaped, extent=[min(B0), max(B0), min(B1), max(B1)], cmap='OrRd', alpha=0.5)
+            plt.imshow(shaped, extent=[min(B0), max(B0), min(B1), max(B1)], origin='lower',cmap='OrRd', alpha=0.5)
             plt.colorbar()
             if save_fig is not None:
                 plt.savefig('{filename}.png'.format(filename=save_fig))
