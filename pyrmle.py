@@ -93,7 +93,7 @@ def plot_rmle(result, plt_type=None, save_fig=None):
             B1 = (new_interval) / b1_scale - shifts[1]
             contour = plt.contour(B0, B1, shaped, colors='black')
             plt.clabel(contour, inline=True, fontsize=8)
-            plt.imshow(shaped, extent=[min(B0), max(B0), min(B1), max(B1)], origin='lower',cmap='OrRd', alpha=0.5)
+            plt.imshow(shaped, extent=[min(B0), max(B0), min(B1), max(B1)], origin = 'lower',cmap='OrRd', alpha=0.5)
             plt.colorbar()
             if save_fig is not None:
                 plt.savefig('{filename}.png'.format(filename=save_fig))
@@ -138,7 +138,7 @@ def plot_rmle(result, plt_type=None, save_fig=None):
             b0_axis, b1_axis = np.meshgrid(B0, B1)
             fig = plt.figure(1)
             ax = fig.add_subplot(projection='3d')
-            ax.plot_surface(b0_axis, b1_axis, shaped, cmap='OrRd', linewidth=0, alpha=1)
+            plot = ax.plot_surface(b0_axis, b1_axis, shaped, cmap='OrRd', linewidth=0, alpha=1)
             ax.set_xlabel('B0')
             ax.set_ylabel('B1')
             ax.set_zlabel('f_B  ')
@@ -191,3 +191,4 @@ def plot_rmle(result, plt_type=None, save_fig=None):
             if save_fig is not None:
                 plt.savefig('{filename}_f12.png'.format(filename=save_fig))
             plt.show()
+
