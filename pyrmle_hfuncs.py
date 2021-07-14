@@ -341,6 +341,21 @@ class grid_obj:
         return k
     def numgridpoints(self):
         return (len(self.interval)-1)**self.dim
+    
+
+def transmatrix(xy_sample,grid):
+    """ This function just serves as a wrapper function for the 2-d and 3-d implementations of the algorithm
+    used to generate the transformation matrix.
+    """
+    scaled_sample = scale_sample(xy_sample,grid)
+    sample = xy_sample.copy()
+    samples = sample_obj(scaled_sample=scaled_sample,sample=sample)
+    if grid.dim == 2:
+        tmatrix = transmatrix_2d(samples,grid)
+        return tmatrix
+    else:
+        tmatrix = transmatrix_3d(samples,grid)
+        return tmatrix
 
 def ransample_bivar(n,pi,mu,sigma):
     """ Function used to generate \betas from a normal mixture """
