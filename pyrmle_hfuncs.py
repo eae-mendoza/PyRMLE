@@ -184,8 +184,8 @@ class RMLEResult:
         elif self.dim == 3:
             f_shaped = f.reshape(m,m,m)
             f12=np.sum(f_shaped,axis=2)*b0_step
-            f02=np.sum(f_shaped,axis=0)*b1_step
-            f01=np.sum(f_shaped,axis=1)*b2_step
+            f02=np.sum(f_shaped,axis=1)*b1_step
+            f01=np.sum(f_shaped,axis=0)*b2_step
             expected_vals.append(sum(np.sum(f01,axis=0)*B0*b0_step*b2_step))
             expected_vals.append(sum(np.sum(f02,axis=1)*B1*b1_step*b2_step))
             expected_vals.append(sum(np.sum(f12,axis=1)*B2*b2_step*b0_step))
@@ -232,8 +232,8 @@ class RMLEResult:
             cov_mat = np.zeros((3,3))
             # Compute for the marginal distributions
             f12=np.sum(shaped,axis=2)*b0_step
-            f02=np.sum(shaped,axis=0)*b1_step
-            f01=np.sum(shaped,axis=1)*b2_step
+            f02=np.sum(shaped,axis=1)*b1_step
+            f01=np.sum(shaped,axis=0)*b2_step
             f0 = np.sum(f01,axis=0)*b1_step
             f1 = np.sum(f12,axis=0)*b2_step
             f2 = np.sum(f02,axis=1)*b0_step
@@ -259,6 +259,7 @@ class RMLEResult:
             cov_mat[0][2], cov_mat[2][0] = var02, var02
             cov_mat[1][2], cov_mat[2][1] = var12, var12
             return cov_mat        
+        
 class tmatrix:
     """ Class that stores the output of the transmatrix() function. 
     Attributes/arguments for this class:
