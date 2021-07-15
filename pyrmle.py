@@ -101,8 +101,8 @@ def plot_rmle(result, plt_type=None, save_fig=None):
         else:
             shaped = result.f.reshape(m, m, m)
             f12 = np.sum(shaped, axis=2) * step_size
-            f01 = np.sum(shaped, axis=1) * step_size
-            f02 = np.sum(shaped, axis=0) * step_size
+            f01 = np.sum(shaped, axis=0) * step_size
+            f02 = np.sum(shaped, axis=1) * step_size
             B0 = (new_interval) / b0_scale - shifts[0]
             B1 = (new_interval) / b1_scale - shifts[1]
             B2 = (new_interval) / b2_scale - shifts[2]
@@ -150,8 +150,8 @@ def plot_rmle(result, plt_type=None, save_fig=None):
         else:
             shaped = result.f.reshape(m, m, m)
             f12 = np.sum(shaped, axis=2) * step_size
-            f01 = np.sum(shaped, axis=1) * step_size
-            f02 = np.sum(shaped, axis=0) * step_size
+            f01 = np.sum(shaped, axis=0) * step_size
+            f02 = np.sum(shaped, axis=1) * step_size
             B0 = (new_interval) / b0_scale - shifts[0]
             B1 = (new_interval) / b1_scale - shifts[1]
             B2 = (new_interval) / b2_scale - shifts[2]
