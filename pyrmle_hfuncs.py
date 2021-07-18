@@ -218,7 +218,7 @@ class RMLEResult:
             cov_mat[1][1] = sum(f1*(B1-self.ev()[1])**2*b1_step)
             # Extract the values of \hat{f_\beta} for which b_0 = b_1
             f01 = []
-            for i in range(0,self.sgrid.ks()[0]):
+            for i in range(0,self.grid.ks()[0]):
                 f01.append(shaped[i][i])
             f01 = np.array(f01)
             # Compute for the covariance
