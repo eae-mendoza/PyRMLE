@@ -218,7 +218,7 @@ class RMLEResult:
             cov_mat[1][1] = sum(f1*(B1-self.ev()[1])**2*b1_step)
             # Extract the values of \hat{f_\beta} for which b_0 = b_1
             f01 = []
-            for i in range(0,grid_est.ks()[0]):
+            for i in range(0,self.sgrid.ks()[0]):
                 f01.append(shaped[i][i])
             f01 = np.array(f01)
             # Compute for the covariance
@@ -394,7 +394,7 @@ def sim_sample2d(n,x_params=None,beta_pi=None,beta_mu=None,beta_cov=None):
     if beta_mu is not None:
         beta_mu = beta_mu
     else:
-        beta_mu = [[-1.5,-1.5],[1.5,1.5]]
+        beta_mu = [[-0.5,-0.5],[0.5,0.5]]
     if beta_cov is not None:
         beta_cov = beta_cov 
     else:
