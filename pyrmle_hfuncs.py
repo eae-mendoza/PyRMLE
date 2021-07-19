@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import scipy.optimize as scop
+import scipy as sp
 import random
 import numpy as np
 import time
@@ -171,9 +172,9 @@ class RMLEResult:
         # Call \hat{f_\beta}
         f = self.f
         # Declare the step size of the grid based on the grid used to create the transformation matrix
-        b0_step = self.grid.step
-        b1_step = self.grid.step
-        b2_step = self.grid.step
+        b0_step = B0[1]-B0[0]
+        b1_step = B1[1]-B1[0]
+        b2_step = B2[1]-B2[0]
         if self.dim == 2:
             # Reshape \hat{f_\beta} to the it's 2-dimensional np.array form
             f_shaped = f.reshape(m,m)
@@ -244,7 +245,7 @@ class RMLEResult:
             cov_mat[0][0], cov_mat[1][1], cov_mat[2][2] = var_00, var_11, var_22
             # Extract the values from the appropriate marginal distributions 
             f01s,f02s, f12s = [], [], []
-            for i in range(0,grid.ks()[0]):
+            for i in range(0,grid_est.ks()[0]):
                 f01s.append(f01[i][i])
                 f02s.append(f02[i][i])
                 f12s.append(f12[i][i])
@@ -341,6 +342,250 @@ class grid_obj:
         return k
     def numgridpoints(self):
         return (len(self.interval)-1)**self.dim
+
+class SplineResult:
+    def __init__(self, f,f_shaped,joint_marginals,spline_grid):
+        self.f = f
+        self.f_shaped = f_shaped
+        self.joint_marginals = joint_marginals
+        self.grid = spline_grid
+        self.dim = spline_grid.dim
+        self.num_grid_points = spline_grid.num_grid_points
+    def maxval(self):
+        # Extracts the maximum value of \hat{f_\beta}
+        mval = np.max(self.f)
+        # Get the index of the maximum value of \hat{f_\beta} from its m x 1 np.array-form
+        i = int(np.where(self.f == np.max(self.f))[0])
+        # Creates the new intervals which corresponds to center of the individual grid-boxes or cubes.
+        B0 = self.grid.b0_grid_points
+        B1 = self.grid.b1_grid_points
+        B2 = self.grid.b2_grid_points
+        if self.dim == 2:
+            # Converts the index i obtained previously into grid locations based on the 2-dimensional np.array.
+            k = self.grid.ks()[0]
+            # Gets index based on first axis
+            x1 = int(np.floor(i / k))
+            # Gets index based on second axis
+            x2 = int(i % k)
+            if x2 == 0:
+                loc = [B0[x1 - 1], B1[-1]]
+                return [mval, loc]
+            else:
+                loc = [B0[x1], B1[x2]]
+                return [mval, loc]
+        else:
+            # Converts the index i obtained previously into grid locations based on the 3-dimensional np.array.
+            k = self.grid.ks()[0]
+            k2 = self.grid.ks()[1]
+            if i > 0:
+                # Gets index based on first axis
+                x1 = int(i % k)
+                # Gets index based on second axis
+                x2 = int(np.floor(int(i % k2) / k))
+                # Gets index based on third axis
+                x3 = int(np.floor(i / k2))
+                if x2 == 0:
+                    loc = [B0[x1 - 1], B1[-1], B2[x3]]
+                    return [mval, loc]
+                else:
+                    loc = [B0[x1], B1[x2], B2[x3]]
+                    return [mval, loc]
+            else:
+                loc = [B0[0], B1[0], B2[0]]
+                return [mval, loc]
+
+    def mode(self):
+        # Initialize the list to append possible local maxima to
+        modes = []
+        B0 = self.grid.b0_grid_points
+        B1 = self.grid.b1_grid_points
+        B2 = self.grid.b2_grid_points
+        dim = self.grid.dim
+        if dim == 2:
+            k = self.grid.ks()[0]
+            # Index adjustments to get neighboring points for a 2-dimensional np.array
+            neighbor_ks = [-1, 1, -k, -(k + 1), -(k - 1), k, k - 1, k + 1]
+            for i in range(0, len(self.f)):
+                neighbors = []
+                for j in neighbor_ks:
+                    # The try / pass here is necessary in case f[i] does not have
+                    # a neighboring point in some directions
+                    try:
+                        neighbors.append(self.f[i + j])
+                    except:
+                        pass
+                neighbors = np.array(neighbors)
+                # Check if there are any neighboring values to f[i] that are greater
+                val = sum(neighbors > self.f[i])
+                if val == 0:
+                    # This case happens when there are no neighboring points that are greater
+                    # Which means f[i] is a local maximum
+                    if i > 0:
+                        # Gets index based on first axis
+                        x1 = int(np.floor(i / k))
+                        # Gets index based on second axis
+                        x2 = int(i % k)
+                        if x2 == 0:
+                            loc = [B0[x1 - 1], B1[-1]]
+                            modes.append([self.f[i], loc])
+                        else:
+                            loc = [B0[x1], B1[x2]]
+                            modes.append([self.f[i], loc])
+                    else:
+                        loc = [B0[0], B1[0]]
+                        modes.append([self.f[i], loc])
+            modes.sort(reverse=True)
+            return modes[:6]
+        else:
+            k = self.grid.ks()[0]
+            k2 = self.grid.ks()[1]
+            # Index adjustments to get neighboring points for a 3-dimensional np.array
+            neighbor_ks = [-1, 1, -k, -(k + 1), -(k - 1), k, k - 1, k + 1, -1 - k2, 1 - k2, -k - k2, -(k + 1) - k2,
+                           -(k - 1) - k2, k - k2, k - 1 - k2, k + 1 - k2, -1 + k2, 1 + k2, -k + k2, -(k + 1) + k2,
+                           -(k - 1) + k2, k + k2, k - 1 + k2, k + 1 + k2]
+            for i in range(0, len(self.f)):
+                neighbors = []
+                for j in neighbor_ks:
+                    try:
+                        neighbors.append(self.f[i + j])
+                    except:
+                        pass
+                neighbors = np.array(neighbors)
+                # Check if there are any neighboring values to f[i] that are greater
+                val = sum(neighbors > self.f[i])
+                if val == 0:
+                    if i > 0:
+                        # Gets index based on first axis
+                        x1 = int(i % k)
+                        # Gets index based on second axis
+                        x2 = int(np.floor(int(i % k2) / k))
+                        # Gets index based on third axis
+                        x3 = int(np.floor(i / k2))
+                        if x2 == 0:
+                            loc = [B0[x1 - 1], B1[-1], B2[x3]]
+                            modes.append([self.f[i], loc])
+                        else:
+                            loc = [B0[x1], B1[x2], B2[x3]]
+                            modes.append([self.f[i], loc])
+                    else:
+                        loc = [B0[0], B1[0], B2[0]]
+                        modes.append([self.f[i], loc])
+            modes.sort(reverse=True)
+            return modes[:6]
+
+    def ev(self):
+        # Creates the new intervals which corresponds to center of the individual grid-boxes or cubes.
+        B0 = (self.grid.b0_grid_points+self.grid.shifts[0])*self.grid.b0
+        B1 = (self.grid.b1_grid_points+self.grid.shifts[1])*self.grid.b1
+        B2 = (self.grid.b2_grid_points+self.grid.shifts[2])*self.grid.b2
+        # Initialize the list for expected values
+        expected_vals = []
+        m = self.grid.ks()[0]
+        # Call \hat{f_\beta}
+        f = self.f
+        # Declare the step size of the grid based on the grid used to create the transformation matrix
+        b0_step = B0[1]-B0[0]
+        b1_step = B1[1]-B1[0]
+        b2_step = B2[1]-B2[0]
+        if self.dim == 2:
+            # Reshape \hat{f_\beta} to the it's 2-dimensional np.array form
+            f_shaped = self.f_shaped
+            # E[B0] = \int{}
+            expected_vals.append(sum(np.sum(f_shaped, axis=1) * B0 * b0_step * b1_step))
+            expected_vals.append(sum(np.sum(f_shaped, axis=0) * B1 * b0_step * b1_step))
+            return shift_scale_loc(self.grid,expected_vals)
+        elif self.dim == 3:
+            f12 = self.joint_marginals[2]
+            f02 = self.joint_marginals[1]
+            f01 = self.joint_marginals[0]
+            expected_vals.append(sum(np.sum(f01, axis=0) * B0 * b0_step * b2_step))
+            expected_vals.append(sum(np.sum(f02, axis=1) * B1 * b1_step * b2_step))
+            expected_vals.append(sum(np.sum(f12, axis=1) * B2 * b2_step * b0_step))
+            return shift_scale_loc(self.grid,expected_vals)
+    def cov(self):
+        # Establish how many dimensions \hat{f_\beta} has
+        dim = self.dim
+        # Call \hat{f_\beta}
+        f = self.f
+        m = self.grid.ks()[0]
+        # Set gridpoints for each axis
+        B0 = self.grid.b0_grid_points
+        B1 = self.grid.b1_grid_points
+        B2 = self.grid.b2_grid_points
+        # Set the step size of each axis
+        b0_step = B0[1]-B0[0]
+        b1_step = B1[1]-B1[0]
+        b2_step = B2[1]-B2[0]
+        if dim == 2:
+            # Reshape \hat{f_\beta} to 2-dimensional form
+            shaped = self.f_shaped
+            # Initialize the covariance matrix
+            cov_mat = np.zeros((2, 2))
+            # Compute for the marginal distributions
+            f0 = shaped.sum(axis=1) * b0_step
+            f1 = shaped.sum(axis=0) * b1_step
+            # Assign the variances on the diagonal entries
+            cov_mat[0][0] = sum(f0 * (B0 - self.ev()[0]) ** 2 * b0_step)
+            cov_mat[1][1] = sum(f1 * (B1 - self.ev()[1]) ** 2 * b1_step)
+            # Extract the values of \hat{f_\beta} for which b_0 = b_1
+            f01 = []
+            for i in range(0, self.grid.ks()[0]):
+                f01.append(shaped[i][i])
+            f01 = np.array(f01)
+            # Compute for the covariance
+            val = sum(f01 * (B0 - self.ev()[0]) * (B1 - self.ev()[1]) * b0_step * b1_step)
+            cov_mat[0][1], cov_mat[1][0] = val, val
+            return cov_mat
+        else:
+            # INitialize the covariance matrix
+            cov_mat = np.zeros((3, 3))
+            # Compute for the marginal distributions
+            f12 = self.joint_marginals[2]
+            f02 = self.joint_marginals[1]
+            f01 = self.joint_marginals[0]
+            f0 = np.sum(f01, axis=0) * b1_step
+            f1 = np.sum(f12, axis=0) * b2_step
+            f2 = np.sum(f02, axis=1) * b0_step
+            # Compute for the variances on the diagonal entries
+            var_00 = sum(f0 * (B0 - self.ev()[0]) ** 2 * b0_step ** 2)
+            var_11 = sum(f1 * (B1 - self.ev()[1]) ** 2 * b1_step ** 2)
+            var_22 = sum(f2 * (B2 - self.ev()[2]) ** 2 * b2_step ** 2)
+            cov_mat[0][0], cov_mat[1][1], cov_mat[2][2] = var_00, var_11, var_22
+            # Extract the values from the appropriate marginal distributions
+            f01s, f02s, f12s = [], [], []
+            for i in range(0, grid.ks()[0]):
+                f01s.append(f01[i][i])
+                f02s.append(f02[i][i])
+                f12s.append(f12[i][i])
+            f01s = np.array(f01s)
+            f02s = np.array(f02s)
+            f12s = np.array(f12s)
+            # Compute for the covariances
+            var01 = np.sum(f01s * (B0 - self.ev()[0]) * (B1 - self.ev()[1]) * b0_step * b1_step)
+            var02 = np.sum(f02s * (B0 - self.ev()[0]) * (B2 - self.ev()[2]) * b0_step * b2_step)
+            var12 = np.sum(f12s * (B1 - self.ev()[1]) * (B2 - self.ev()[2]) * b1_step * b2_step)
+            cov_mat[0][1], cov_mat[1][0] = var01, var01
+            cov_mat[0][2], cov_mat[2][0] = var02, var02
+            cov_mat[1][2], cov_mat[2][1] = var12, var12
+            return cov_mat
+
+class spline_grid_obj:
+    def __init__(self, num_grid_points,b0_grid_points,b1_grid_points,b2_grid_points,dim,scale,shifts):
+        self.num_grid_points = num_grid_points
+        self.b0_grid_points= b0_grid_points
+        self.b1_grid_points = b1_grid_points
+        self.b2_grid_points = b2_grid_points
+        self.dim = dim
+        self.scale = scale
+        self.b0 = scale[0]
+        self.b1 = scale[1]
+        self.b2 = scale[2]
+        self.shifts = shifts
+    def ks(self):
+        k = []
+        for i in range(0,self.dim):
+            k.append(self.num_grid_points**(i+1))
+        return k
 
 def ransample_bivar(n,pi,mu,sigma):
     """ Function used to generate \betas from a normal mixture """
@@ -1045,7 +1290,7 @@ Try to supply any of the accepted functional values: {likelihood, norm_sq, sobol
         trans_matrix=sample_shuffle(trans_matrix)
         time_start = time.time()
         j=0
-        total = np.ceil((np.log(4)-np.log(len(alphas)))/(0.25*np.log(0.25)+0.75*np.log(0.75)))*2 * k
+        total = np.ceil((np.log(4)-np.log(len(alphas)))/(0.25*np.log(0.25)+0.75*np.log(0.75)))*4 * k
         while len(alphas)> 4:
             val=quarter_selector(alphas,n,k,j,time_start,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
             lhood.append(val[2])
@@ -1601,7 +1846,7 @@ Try to supply any of the accepted functional values: {likelihood_3d, norm_sq_3d,
         trans_matrix=sample_shuffle(trans_matrix)
         time_start = time.time()
         j=0
-        total = np.ceil((np.log(4)-np.log(len(alphas)))/(0.25*np.log(0.25)+0.75*np.log(0.75)))*2 * k
+        total = np.ceil((np.log(4)-np.log(len(alphas)))/(0.25*np.log(0.25)+0.75*np.log(0.75)))*4 * k
         while len(alphas) > 4:
             val=quarter_selector(alphas,n,k,j,time_start,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
             lhood.append(val[2])
