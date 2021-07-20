@@ -553,7 +553,7 @@ class SplineResult:
             cov_mat[0][0], cov_mat[1][1], cov_mat[2][2] = var_00, var_11, var_22
             # Extract the values from the appropriate marginal distributions
             f01s, f02s, f12s = [], [], []
-            for i in range(0, grid.ks()[0]):
+            for i in range(0, self.grid.ks()[0]):
                 f01s.append(f01[i][i])
                 f02s.append(f02[i][i])
                 f12s.append(f12[i][i])
