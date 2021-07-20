@@ -189,7 +189,7 @@ def plot_rmle(result, plt_type=None, save_fig=None):
                 B0 = result.grid.b0_grid_points
                 B1 = result.grid.b1_grid_points
                 B2 = result.grid.b2_grid_points
-                b0_axis, b2_axis = np.meshgrid(B0, B1)
+                b0_axis, b1_axis = np.meshgrid(B0, B1)
                 fig = plt.figure(1)
                 ax = fig.add_subplot(projection='3d')
                 plot = ax.plot_surface(b0_axis, b1_axis, f01, cmap='OrRd', linewidth=0, alpha=1)
