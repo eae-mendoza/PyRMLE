@@ -116,21 +116,15 @@ def plot_rmle(result, plt_type=None, save_fig=None):
     save_fig - a string that serves as the file name of the figure.
     """
     dim = result.dim
-    m = result.grid.ks()[0]
-    step_size = result.grid.step
-    new_interval = np.array(
-        [(result.grid.interval[i - 1] + result.grid.interval[i]) / 2 for i in range(1, len(result.grid.interval))])
-    b0_scale = result.grid.b0
-    b1_scale = result.grid.b1
-    b2_scale = result.grid.b2
-    shifts = result.grid.shifts
     plt_matches = ['surf','sf','surface','3d']
     if type(result) == RMLEResult:
+        m = result.grid.ks()[0]
+        step_size = result.grid.step
         if not plt_type:
             if dim == 2:
-                shaped = result.f.reshape(m, m)
-                B0 = (new_interval) / b0_scale - shifts[0]
-                B1 = (new_interval) / b1_scale - shifts[1]
+                shaped = result.f_shaped
+                B0 = result.grid.b0_grid_points
+                B1 = result.grid.b1_grid_points
                 contour = plt.contour(B0, B1, shaped, colors='black')
                 plt.clabel(contour, inline=True, fontsize=8)
                 plt.imshow(shaped, extent=[min(B0), max(B0), min(B1), max(B1)], origin = 'lower',cmap='OrRd', alpha=0.5)
@@ -139,13 +133,13 @@ def plot_rmle(result, plt_type=None, save_fig=None):
                     plt.savefig('{filename}.png'.format(filename=save_fig))
                 plt.show()
             else:
-                shaped = result.f.reshape(m, m, m)
+                shaped = result.f_shaped
                 f12 = np.sum(shaped, axis=2) * step_size
                 f01 = np.sum(shaped, axis=0) * step_size
                 f02 = np.sum(shaped, axis=1) * step_size
-                B0 = (new_interval) / b0_scale - shifts[0]
-                B1 = (new_interval) / b1_scale - shifts[1]
-                B2 = (new_interval) / b2_scale - shifts[2]
+                B0 = result.grid.b0_grid_points
+                B1 = result.grid.b1_grid_points
+                B2 = result.grid.b2_grid_points
                 plt.figure(1)
                 contour1 = plt.contour(B0, B1, f01, colors='black')
                 plt.clabel(contour1, inline=True, fontsize=8)
@@ -172,9 +166,9 @@ def plot_rmle(result, plt_type=None, save_fig=None):
                 plt.show()
         elif any(c in str.lower(str(plt_type)) for c in plt_matches):
             if dim == 2:
-                shaped = result.f.reshape(m, m)
-                B0 = (new_interval) / b0_scale - shifts[0]
-                B1 = (new_interval) / b1_scale - shifts[1]
+                shaped = result.f_shaped
+                B0 = result.grid.b0_grid_points
+                B1 = result.grid.b1_grid_points
                 b0_axis, b1_axis = np.meshgrid(B0, B1)
                 fig = plt.figure(1)
                 ax = fig.add_subplot(projection='3d')
@@ -188,14 +182,14 @@ def plot_rmle(result, plt_type=None, save_fig=None):
                     plt.savefig('{filename}.png'.format(filename=save_fig))
                 plt.show()
             else:
-                shaped = result.f.reshape(m, m, m)
+                shaped = result.f_shaped
                 f12 = np.sum(shaped, axis=2) * step_size
                 f01 = np.sum(shaped, axis=0) * step_size
                 f02 = np.sum(shaped, axis=1) * step_size
-                B0 = (new_interval) / b0_scale - shifts[0]
-                B1 = (new_interval) / b1_scale - shifts[1]
-                B2 = (new_interval) / b2_scale - shifts[2]
-                b0_axis, b1_axis = np.meshgrid(B0, B1)
+                B0 = result.grid.b0_grid_points
+                B1 = result.grid.b1_grid_points
+                B2 = result.grid.b2_grid_points
+                b0_axis, b2_axis = np.meshgrid(B0, B1)
                 fig = plt.figure(1)
                 ax = fig.add_subplot(projection='3d')
                 plot = ax.plot_surface(b0_axis, b1_axis, f01, cmap='OrRd', linewidth=0, alpha=1)
