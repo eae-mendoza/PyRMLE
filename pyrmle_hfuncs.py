@@ -343,6 +343,20 @@ class grid_obj:
     def numgridpoints(self):
         return (len(self.interval)-1)**self.dim
 
+def transmatrix(xy_sample,grid):
+    """ This function just serves as a wrapper function for the 2-d and 3-d implementations of the algorithm
+    used to generate the transformation matrix.
+    """
+    scaled_sample = scale_sample(xy_sample,grid)
+    sample = xy_sample.copy()
+    samples = sample_obj(scaled_sample=scaled_sample,sample=sample)
+    if grid.dim == 2:
+        tmatrix = transmatrix_2d(samples,grid)
+        return tmatrix
+    else:
+        tmatrix = transmatrix_3d(samples,grid)
+        return tmatrix
+
 class SplineResult:
     def __init__(self, f,f_shaped,joint_marginals,spline_grid):
         self.f = f
@@ -572,7 +586,7 @@ class SplineResult:
 class spline_grid_obj:
     def __init__(self, num_grid_points,b0_grid_points,b1_grid_points,b2_grid_points,dim,scale,shifts):
         self.num_grid_points = num_grid_points
-        self.b0_grid_points= b0_grid_points
+        self.b0_grid_points = b0_grid_points
         self.b1_grid_points = b1_grid_points
         self.b2_grid_points = b2_grid_points
         self.dim = dim
