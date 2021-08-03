@@ -26,5 +26,5 @@ setup(
     ],
     packages=["reader"],
     include_package_data=True,
-    install_requires=["scipy","sklearn","matplotlib","pyrmle_hfuncs],
+    install_requires=["scipy","sklearn","matplotlib","pyrmle_hfuncs"],
 )
