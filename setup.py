@@ -24,7 +24,7 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9"
     ],
-    packages=["reader"],
+    packages=["pyrmle","pyrmle_hfuncs"],
     include_package_data=True,
     install_requires=["scipy","sklearn","matplotlib"],
 )
