@@ -16,7 +16,7 @@ setup(
     url="https://github.com/eae-mendoza/PyRMLE",
     author="Emil Alfred Edgar N. Mendoza",
     author_email="emil.edgar.mendoza@gmail.com",
-    license="MIT",
+    license="BSD",
     classifiers=[
         "License :: OSI Approved :: BSD License",
         "Programming Language :: Python :: 3",
