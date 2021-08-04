@@ -43,6 +43,7 @@ class RMLEResult:
         self.dim = self.T.grid.dim
         self.f_shaped = shape(self)
         self.details = details
+        
     def maxval(self):
         # Extracts the maximum value of \hat{f_\beta}
         mval = np.max(self.f)
@@ -52,6 +53,7 @@ class RMLEResult:
         B0 = self.grid.b0_grid_points
         B1 = self.grid.b1_grid_points
         B2 = self.grid.b2_grid_points
+        
         if self.dim ==2:
             # Converts the index i obtained previously into grid locations based on the 2-dimensional np.array.
             k = self.grid.ks()[0]
@@ -59,16 +61,19 @@ class RMLEResult:
             x1=int(np.floor(i/k))
             #Gets index based on second axis
             x2=int(i%k)
+            
             if x2 == 0:
                 loc=[B0[x1-1],B1[-1]]
                 return [mval,loc]
             else: 
                 loc=[B0[x1],B1[x2]]
                 return [mval,loc]
+            
         else:
             # Converts the index i obtained previously into grid locations based on the 3-dimensional np.array.
             k = self.grid.ks()[0]
             k2 = self.grid.ks()[1]
+            
             if i > 0:
                 #Gets index based on first axis
                 x1=int(i%k)
@@ -76,15 +81,18 @@ class RMLEResult:
                 x2=int(np.floor(int(i%k2)/k))
                 #Gets index based on third axis
                 x3=int(np.floor(i/k2))
+                
                 if x2 == 0:
                     loc=[B0[x1-1],B1[-1],B2[x3]]
                     return [mval,loc]
                 else: 
                     loc=[B0[x1],B1[x2],B2[x3]]
                     return [mval,loc]
+                
             else:
                 loc=[B0[0],B1[0],B2[0]]
                 return [mval,loc]
+            
     def mode(self):
         # Initialize the list to append possible local maxima to
         modes=[]
@@ -92,10 +100,12 @@ class RMLEResult:
         B1 = self.grid.b1_grid_points
         B2 = self.grid.b2_grid_points
         dim = self.grid.dim
+        
         if dim == 2:
             k = self.grid.ks()[0]
             # Index adjustments to get neighboring points for a 2-dimensional np.array
             neighbor_ks = [-1,1,-k,-(k+1),-(k-1),k,k-1,k+1]
+            
             for i in range(0,len(self.f)):
                 neighbors = []
                 for j in neighbor_ks:
@@ -108,6 +118,7 @@ class RMLEResult:
                 neighbors = np.array(neighbors)
                 # Check if there are any neighboring values to f[i] that are greater
                 val = sum(neighbors > self.f[i])
+                
                 if val == 0: 
                     # This case happens when there are no neighboring points that are greater
                     # Which means f[i] is a local maximum
@@ -122,16 +133,21 @@ class RMLEResult:
                         else: 
                             loc=[B0[x1],B1[x2]]
                             modes.append([self.f[i],loc])
+                            
                     else:
                         loc=[B0[0],B1[0]]
                         modes.append([self.f[i],loc])
+                        
             modes.sort(reverse=True)
+            
             return modes[:6]
+        
         else:
             k = self.grid.ks()[0]
             k2 = self.grid.ks()[1]
             # Index adjustments to get neighboring points for a 3-dimensional np.array
             neighbor_ks = [-1,1,-k,-(k+1),-(k-1),k,k-1,k+1,-1-k2,1-k2,-k-k2,-(k+1)-k2,-(k-1)-k2,k-k2,k-1-k2,k+1-k2,-1+k2,1+k2,-k+k2,-(k+1)+k2,-(k-1)+k2,k+k2,k-1+k2,k+1+k2]
+            
             for i in range(0,len(self.f)):
                 neighbors = []
                 for j in neighbor_ks:
@@ -142,6 +158,7 @@ class RMLEResult:
                 neighbors = np.array(neighbors)
                 # Check if there are any neighboring values to f[i] that are greater
                 val = sum(neighbors > self.f[i])
+                
                 if val == 0:
                     if i > 0:
                         #Gets index based on first axis
@@ -159,8 +176,10 @@ class RMLEResult:
                     else:
                         loc=[B0[0],B1[0],B2[0]]
                         modes.append([self.f[i],loc])
+                        
             modes.sort(reverse=True)
             return modes[:6]
+        
     def ev(self):
         # Creates the new intervals which corresponds to center of the individual grid-boxes or cubes.
         B0 = (self.grid.b0_grid_points+self.grid.shifts[0])*self.grid.b0
@@ -175,6 +194,7 @@ class RMLEResult:
         b0_step = B0[1]-B0[0]
         b1_step = B1[1]-B1[0]
         b2_step = B2[1]-B2[0]
+        
         if self.dim == 2:
             # Reshape \hat{f_\beta} to the it's 2-dimensional np.array form
             f_shaped = f.reshape(m,m)
@@ -182,6 +202,7 @@ class RMLEResult:
             expected_vals.append(sum(np.sum(f_shaped,axis=1)*B0*b0_step*b1_step))
             expected_vals.append(sum(np.sum(f_shaped,axis=0)*B1*b0_step*b1_step))
             return shift_scale_loc(self.grid,expected_vals)
+        
         elif self.dim == 3:
             f_shaped = f.reshape(m,m,m)
             f12=np.sum(f_shaped,axis=2)*b0_step
@@ -206,6 +227,7 @@ class RMLEResult:
         b0_step = self.grid.step/self.grid.b0
         b1_step = self.grid.step/self.grid.b1
         b2_step = self.grid.step/self.grid.b2
+        
         if dim ==2:
             # Reshape \hat{f_\beta} to 2-dimensional form
             shaped = f.reshape(m,m)
@@ -219,6 +241,7 @@ class RMLEResult:
             cov_mat[1][1] = sum(f1*(B1-self.ev()[1])**2*b1_step)
             # Extract the values of \hat{f_\beta} for which b_0 = b_1
             f01 = []
+            
             for i in range(0,self.grid.ks()[0]):
                 f01.append(shaped[i][i])
             f01 = np.array(f01)
@@ -226,6 +249,7 @@ class RMLEResult:
             val = sum(f01*(B0-self.ev()[0])*(B1-self.ev()[1])*b0_step*b1_step)
             cov_mat[0][1],cov_mat[1][0] = val,val
             return cov_mat
+        
         else:
             # Reshape \hat{f_\beta} to its 3-dimensional form
             shaped = f.reshape(m,m,m)
@@ -245,6 +269,7 @@ class RMLEResult:
             cov_mat[0][0], cov_mat[1][1], cov_mat[2][2] = var_00, var_11, var_22
             # Extract the values from the appropriate marginal distributions 
             f01s,f02s, f12s = [], [], []
+            
             for i in range(0,grid_est.ks()[0]):
                 f01s.append(f01[i][i])
                 f02s.append(f02[i][i])
@@ -260,6 +285,7 @@ class RMLEResult:
             cov_mat[0][2], cov_mat[2][0] = var02, var02
             cov_mat[1][2], cov_mat[2][1] = var12, var12
             return cov_mat        
+        
 class tmatrix:
     """ Class that stores the output of the transmatrix() function. 
     Attributes/arguments for this class:
@@ -286,8 +312,10 @@ class tmatrix:
         self.grid = grid
         self.scaled_sample = scaled_sample
         self.sample = sample
+        
     def n(self):
         return len(self.Tmat)
+    
     def m(self):
         return len(self.Tmat.T)
     
@@ -334,12 +362,15 @@ class grid_obj:
         self.b2_grid_points = np.array([(self.b2_range[i-1]+self.b2_range[i])/2 for i in range(1,len(self.b2_range))])
         self.shifts = shifts
         self.scaled_steps = step/scale
+        
     def ks(self):
         k = []
         m = len(self.interval)
+        
         for i in range(0,self.dim):
             k.append(int((m-1)**(i+1)))
         return k
+    
     def numgridpoints(self):
         return (len(self.interval)-1)**self.dim
 
@@ -350,9 +381,11 @@ def transmatrix(xy_sample,grid):
     scaled_sample = scale_sample(xy_sample,grid)
     sample = xy_sample.copy()
     samples = sample_obj(scaled_sample=scaled_sample,sample=sample)
+    
     if grid.dim == 2:
         tmatrix = transmatrix_2d(samples,grid)
         return tmatrix
+    
     else:
         tmatrix = transmatrix_3d(samples,grid)
         return tmatrix
@@ -365,6 +398,7 @@ class SplineResult:
         self.grid = spline_grid
         self.dim = spline_grid.dim
         self.num_grid_points = spline_grid.num_grid_points
+        
     def maxval(self):
         # Extracts the maximum value of \hat{f_\beta}
         mval = np.max(self.f)
@@ -374,6 +408,7 @@ class SplineResult:
         B0 = self.grid.b0_grid_points
         B1 = self.grid.b1_grid_points
         B2 = self.grid.b2_grid_points
+        
         if self.dim == 2:
             # Converts the index i obtained previously into grid locations based on the 2-dimensional np.array.
             k = self.grid.ks()[0]
@@ -387,6 +422,7 @@ class SplineResult:
             else:
                 loc = [B0[x1], B1[x2]]
                 return [mval, loc]
+            
         else:
             # Converts the index i obtained previously into grid locations based on the 3-dimensional np.array.
             k = self.grid.ks()[0]
@@ -404,6 +440,7 @@ class SplineResult:
                 else:
                     loc = [B0[x1], B1[x2], B2[x3]]
                     return [mval, loc]
+                
             else:
                 loc = [B0[0], B1[0], B2[0]]
                 return [mval, loc]
@@ -415,10 +452,12 @@ class SplineResult:
         B1 = self.grid.b1_grid_points
         B2 = self.grid.b2_grid_points
         dim = self.grid.dim
+        
         if dim == 2:
             k = self.grid.ks()[0]
             # Index adjustments to get neighboring points for a 2-dimensional np.array
             neighbor_ks = [-1, 1, -k, -(k + 1), -(k - 1), k, k - 1, k + 1]
+            
             for i in range(0, len(self.f)):
                 neighbors = []
                 for j in neighbor_ks:
@@ -431,6 +470,7 @@ class SplineResult:
                 neighbors = np.array(neighbors)
                 # Check if there are any neighboring values to f[i] that are greater
                 val = sum(neighbors > self.f[i])
+                
                 if val == 0:
                     # This case happens when there are no neighboring points that are greater
                     # Which means f[i] is a local maximum
@@ -445,11 +485,14 @@ class SplineResult:
                         else:
                             loc = [B0[x1], B1[x2]]
                             modes.append([self.f[i], loc])
+                            
                     else:
                         loc = [B0[0], B1[0]]
                         modes.append([self.f[i], loc])
             modes.sort(reverse=True)
+            
             return modes[:6]
+        
         else:
             k = self.grid.ks()[0]
             k2 = self.grid.ks()[1]
@@ -457,6 +500,7 @@ class SplineResult:
             neighbor_ks = [-1, 1, -k, -(k + 1), -(k - 1), k, k - 1, k + 1, -1 - k2, 1 - k2, -k - k2, -(k + 1) - k2,
                            -(k - 1) - k2, k - k2, k - 1 - k2, k + 1 - k2, -1 + k2, 1 + k2, -k + k2, -(k + 1) + k2,
                            -(k - 1) + k2, k + k2, k - 1 + k2, k + 1 + k2]
+            
             for i in range(0, len(self.f)):
                 neighbors = []
                 for j in neighbor_ks:
@@ -467,6 +511,7 @@ class SplineResult:
                 neighbors = np.array(neighbors)
                 # Check if there are any neighboring values to f[i] that are greater
                 val = sum(neighbors > self.f[i])
+                
                 if val == 0:
                     if i > 0:
                         # Gets index based on first axis
@@ -481,9 +526,11 @@ class SplineResult:
                         else:
                             loc = [B0[x1], B1[x2], B2[x3]]
                             modes.append([self.f[i], loc])
+                            
                     else:
                         loc = [B0[0], B1[0], B2[0]]
                         modes.append([self.f[i], loc])
+                        
             modes.sort(reverse=True)
             return modes[:6]
 
@@ -501,6 +548,7 @@ class SplineResult:
         b0_step = B0[1]-B0[0]
         b1_step = B1[1]-B1[0]
         b2_step = B2[1]-B2[0]
+        
         if self.dim == 2:
             # Reshape \hat{f_\beta} to the it's 2-dimensional np.array form
             f_shaped = self.f_shaped
@@ -508,6 +556,7 @@ class SplineResult:
             expected_vals.append(sum(np.sum(f_shaped, axis=1) * B0 * b0_step * b1_step))
             expected_vals.append(sum(np.sum(f_shaped, axis=0) * B1 * b0_step * b1_step))
             return shift_scale_loc(self.grid,expected_vals)
+        
         elif self.dim == 3:
             f12 = self.joint_marginals[2]
             f02 = self.joint_marginals[1]
@@ -516,6 +565,7 @@ class SplineResult:
             expected_vals.append(sum(np.sum(f02, axis=1) * B1 * b1_step * b2_step))
             expected_vals.append(sum(np.sum(f12, axis=1) * B2 * b2_step * b0_step))
             return shift_scale_loc(self.grid,expected_vals)
+        
     def cov(self):
         # Establish how many dimensions \hat{f_\beta} has
         dim = self.dim
@@ -530,6 +580,7 @@ class SplineResult:
         b0_step = B0[1]-B0[0]
         b1_step = B1[1]-B1[0]
         b2_step = B2[1]-B2[0]
+        
         if dim == 2:
             # Reshape \hat{f_\beta} to 2-dimensional form
             shaped = self.f_shaped
@@ -543,6 +594,7 @@ class SplineResult:
             cov_mat[1][1] = sum(f1 * (B1 - self.ev()[1]) ** 2 * b1_step)
             # Extract the values of \hat{f_\beta} for which b_0 = b_1
             f01 = []
+            
             for i in range(0, self.grid.ks()[0]):
                 f01.append(shaped[i][i])
             f01 = np.array(f01)
@@ -550,6 +602,7 @@ class SplineResult:
             val = sum(f01 * (B0 - self.ev()[0]) * (B1 - self.ev()[1]) * b0_step * b1_step)
             cov_mat[0][1], cov_mat[1][0] = val, val
             return cov_mat
+        
         else:
             # INitialize the covariance matrix
             cov_mat = np.zeros((3, 3))
@@ -567,6 +620,7 @@ class SplineResult:
             cov_mat[0][0], cov_mat[1][1], cov_mat[2][2] = var_00, var_11, var_22
             # Extract the values from the appropriate marginal distributions
             f01s, f02s, f12s = [], [], []
+            
             for i in range(0, self.grid.ks()[0]):
                 f01s.append(f01[i][i])
                 f02s.append(f02[i][i])
@@ -581,9 +635,11 @@ class SplineResult:
             cov_mat[0][1], cov_mat[1][0] = var01, var01
             cov_mat[0][2], cov_mat[2][0] = var02, var02
             cov_mat[1][2], cov_mat[2][1] = var12, var12
+            
             return cov_mat
 
 class spline_grid_obj:
+    
     def __init__(self, num_grid_points,b0_grid_points,b1_grid_points,b2_grid_points,dim,scale,shifts):
         self.num_grid_points = num_grid_points
         self.b0_grid_points = b0_grid_points
@@ -595,6 +651,7 @@ class spline_grid_obj:
         self.b1 = scale[1]
         self.b2 = scale[2]
         self.shifts = shifts
+        
     def ks(self):
         k = []
         for i in range(0,self.dim):
@@ -608,6 +665,7 @@ def ransample_bivar(n,pi,mu,sigma):
     # This step determines from which distribution to sample from based on the 
     # probabilities given
     k=np.random.choice(len(pi),n,p=pi,replace=True)
+    
     for i in range(0,len(k)):
         x[i],y[i]=np.random.multivariate_normal(mu[k[i]],sigma[k[i]],1).T
     return x,y
@@ -616,6 +674,7 @@ def shape(result):
     f = result.f
     dim = result.dim
     m = result.grid.ks()[0]
+    
     if dim  == 2:
         return f.reshape(m,m)
     else:
@@ -629,11 +688,13 @@ def initial_gauss(grid):
     z_ = grid.b2_grid_points
     sig = 1
     mu = 0
+    
     if dim == 2:
         x,y = np.meshgrid(x_, y_)
         dst = np.sqrt(x*x+y*y)
         gauss = np.exp(-( (dst-mu)**2 / ( 2.0 * sig**2 ) ) )
         return np.ravel(gauss)
+    
     elif dim == 3:
         x,y,z = np.meshgrid(x_, y_, z_, indexing='xy')
         dst = np.sqrt(x*x+y*y+z*z)
@@ -658,6 +719,7 @@ def sim_sample2d(n,x_params=None,beta_pi=None,beta_mu=None,beta_cov=None):
         beta_cov = beta_cov 
     else:
         beta_cov = [[[0.01, 0], [0, 0.01]],[[0.01, 0], [0, 0.01]]]
+        
     # Sample the regressor X_1 from a uniform distribution
     x1=np.random.uniform(x_params[0],x_params[1],n).T
     # X_0 is generated by creating a column of ones
@@ -694,6 +756,7 @@ def sim_sample3d(n,x_params=None,beta_pi=None,beta_mu=None,beta_cov=None):
         beta_cov = beta_cov 
     else:
         beta_cov = [[[0.01, 0, 0], [0,0.01,0], [0,0,0.01]],[[0.01, 0, 0], [0,0.01,0], [0,0,0.01]],[[0.01, 0, 0], [0,0.01,0], [0,0,0.01]]]
+        
     # Sample the regressors X_1, and X_2 iid from a uniform distribution.
     x1=np.random.uniform(x_params[0],x_params[1],n).T
     x2=np.random.uniform(x_params[0],x_params[1],n).T
@@ -708,6 +771,7 @@ def sim_sample3d(n,x_params=None,beta_pi=None,beta_mu=None,beta_cov=None):
     # Generate the response variable Y
     y=np.array([sum(x) for x in bx])
     xy_sample_sim=np.c_[xs,y]
+    
     return xy_sample_sim
 
 
@@ -725,38 +789,13 @@ def filt(start,end,step,array):
     array=array[t3]
     return array
 
-def dist_xy(p1,p2):
-    return np.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2)
-
-def filt2(array,slope):
-    n=len(array)
-    if (slope[1]<=0 and slope[0]>=0) or (slope[1]>=0 and slope[0]<=0):
-        return array[1:n]
-    else:
-        return array[1:n]
-
-def which_Bi(point,Bi_grid):
-    if len(b1s[b1s<point[0]])>0: 
-        i=len(b1s[b1s<point[0]])-1
-    else:
-        i=0
-    if len(b0s[b0s<point[1]])>0:
-        j=len(b0s[b0s<point[1]])-1
-    else:
-        j=0
-    return Bi_grid[i][j]
-
-def likelihood_wrapper(f0,sample,b1s,b0s,start,end):
-    fs=np.array([f_yx_test(f0,i[0],i[1],b1s,b0s,start,end) for i in sample])
-    return -sum(np.log(fs))
-
 
 def which_ij(point,slope,interval):
     """This function takes an intersection point as an argument and determines the
     2-dimensional index of the intersection point based on the grid. """
     b0s=interval
     b1s=interval
-    # 
+    
     if (slope[1]<=0 and slope[0]>=0) or (slope[1]>=0 and slope[0]<=0):
         if len(b1s[b1s<point[0]])>0: 
             i=len(b1s[b1s<point[0]])-1
@@ -767,6 +806,7 @@ def which_ij(point,slope,interval):
         else:
             j=0
         return i,j
+    
     else:
         if len(b1s[b1s<point[0]])>0: 
             i=len(b1s[b1s<point[0]])-1
@@ -796,12 +836,15 @@ def get_intervals(xi,yi,grid):
     b0s=grid.interval
     b1s=grid.interval
     # Computes for intersection points for different cases
+    
     if xi[1]!= 0 and xi[0]!=0:
         b0=(yi-b1s*xi[1])/xi[0]
         b1=(yi-b0s*xi[0])/xi[1]
+        
     elif xi[1]==0:
         b0=[yi]*len(b1s)
         b1=b1s
+        
     else:
         b0=b0s
         b1=[yi]*len(b1s)
@@ -825,12 +868,15 @@ def get_intersections(xi,yi,grid):
     step = grid.step
     b0s=grid.interval
     b1s=grid.interval
+    
     if xi[1]!= 0 and xi[0]!=0:
         b0=(yi-b1s*xi[1])/xi[0]
         b1=(yi-b0s*xi[0])/xi[1]
+        
     elif xi[1]==0:
         b0=[yi]*len(b1s)
         b1=b1s
+        
     else:
         b0=b0s
         b1=[yi]*len(b1s)
@@ -852,14 +898,17 @@ def transmatrix_2d(sample,grid):
     """
     xy_sample = sample.scaled_sample.copy()
     L=np.zeros((len(xy_sample),grid.numgridpoints()))
+    
     for n in range(0,len(xy_sample)):
         intervals=get_intervals(xy_sample[n],xy_sample[n][2],grid)
         intersection=get_intersections(xy_sample[n],xy_sample[n][2],grid)
         indices=index_conv([which_ij(p,xy_sample[n],grid.interval) for p in intersection],grid.numgridpoints())
         indices=list(map(int,indices))
+        
         for i in range(0,len(indices)):
             L[n][indices[i]]=intervals[i]
     L = L[~np.all(L==0, axis=1)]
+    
     return tmatrix(Tmat=L,grid=grid,scaled_sample=xy_sample,sample=sample.sample)
 
 
@@ -940,11 +989,6 @@ def jac_norm_sq(f,alpha,n,L_mat_long,step):
     val=L_mat.T/denom
     return -val.T.sum(axis=0)/n+alpha*step**2*2*f
 
-"""def jac_sobolev2(f,alpha,n):
-    denom=np.dot(L_mat,f)
-    val=L_mat.T/denom
-    return -val.T.sum(axis=0)/n+alpha*step**2*2*f+2*alpha*step**2*second_deriv(f)"""
-
 def jac_sobolev(f,alpha,n,L_mat_long,step):
     """ This function computes the jacobian of the regularization
     functional with the H1 penalty.
@@ -999,6 +1043,7 @@ def updt(total, progress):
     """
     barLength, status = 20, ""
     progress = float(progress) / float(total)
+    
     if progress >= 1.:
         progress, status = 1, "\r\n"
     block = int(round(barLength * progress))
@@ -1020,6 +1065,7 @@ def updt_cv(total, progress,time_start):
     """
     time_elapsed = time.time() - time_start
     max_iters, status = total, ""
+    
     if progress >= max_iters:
         progress, max_iters = max_iters, "\r\n"
     text = "\r{} / {} possible iterations. Time elapsed: {} seconds. {}".format(progress,total,time_elapsed,status)
@@ -1033,13 +1079,17 @@ def select_cluster(y,kmean_obj,l2s):
     arr_l2 = np.array(l2s)
     clus1 = len(np.where(y==1)[0])
     clus0 = len(np.where(y==0)[0])
+    
     if clus1 > clus0:
         return np.where(y==1)[0],1
+    
     elif clus0 > clus1:
         return np.where(y==0)[0],0
+    
     else:
         clus_center1 = kmean_obj.cluster_centers_[1][0]
         clus_center0 = kmean_obj.cluster_centers_[1][0]
+        
         if clus_center1 < clus_center0:
             return np.where(y==1)[0],1
         else: 
@@ -1053,10 +1103,12 @@ def shift_scale_loc(grid,loc):
     if grid.dim == 2:
         loc_copy[0] = loc_copy[0]/grid.b0-grid.shifts[0]
         loc_copy[1] = loc_copy[1]/grid.b1-grid.shifts[1]
+        
     else:
         loc_copy[0] = loc_copy[0]/grid.b0-grid.shifts[0]
         loc_copy[1] = loc_copy[1]/grid.b1-grid.shifts[1]
         loc_copy[2] = loc_copy[2]/grid.b2-grid.shifts[2]
+        
     return loc_copy
 
 
@@ -1065,11 +1117,13 @@ def index_finder(diffs):
     satisfies the Lepskii balancing principle criteria.
     """
     i=0
+    
     for d in diffs:
         val = np.sum(d[d<0])
         i+=1
         if val != 0:
             break
+            
     return int(i-1)
 
 def prop_n(r,q,i):
@@ -1078,18 +1132,23 @@ def prop_n(r,q,i):
 def alpha_vals(a,n):
     """ This function generates the values of \alpha to be used for cross validation. """
     itrs=[]
+    
     for i in range(0,n):
         itrs.append(a*0.9**i)
     itrs.reverse()
+    
     return itrs
 
 def alpha_lep(n,sample_size,r):
     """ This function generates the values of \alpha to be used for Lepskii's method"""
     a=1/(2*sample_size)*np.log(sample_size)/np.sqrt(sample_size)
     itrs=[]
+    
     for i in range(0,n):
         itrs.append(a*r**i)
+        
     itrs=[i for i in itrs if i <=2]
+    
     return itrs
 
 def sample_shuffle(sample):
@@ -1101,6 +1160,7 @@ def sample_shuffle(sample):
     random.shuffle(indices)
     i=0
     new_sample=[]
+    
     for i in indices:
         new_sample.append(sample[i])
     return new_sample
@@ -1110,10 +1170,13 @@ def cv_index(n,k):
     validation.
     """
     n_k = int(np.ceil(n/k))
+    
     if n%k != 0:
         indices=np.arange(0,n,n_k)[0:-1]
+        
     else:
         indices=np.arange(0,n,n_k)
+        
     return indices
 
 def cv_loss(a,alphas,n,k,progress,time_start,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound):
@@ -1129,9 +1192,11 @@ def cv_loss(a,alphas,n,k,progress,time_start,total,functional,initial_guess,tran
     inv_trans_matrix_slices.append(trans_matrix[indices[-1]:])
     j=progress
     loss=0
+    
     for i in range(1,len(indices)-1):
         trans_matrix_slices.append(np.concatenate((trans_matrix[:indices[i]],trans_matrix[indices[i+1]:])))
         inv_trans_matrix_slices.append(trans_matrix[indices[i]:indices[i+1]])
+        
     for t,i in zip(trans_matrix_slices,inv_trans_matrix_slices):
         trans_matrix_slice_long = np.ravel(t)
         inv_trans_matrix_slice_long = np.ravel(i)
@@ -1142,6 +1207,7 @@ def cv_loss(a,alphas,n,k,progress,time_start,total,functional,initial_guess,tran
         loss+=likelihood_l(val_f,inv_trans_matrix_slice_long,n_i)
         j+=1
         updt_cv(total,j,time_start)
+        
     return f_n.x,loss/k,j
 
 def quarter_selector(alphas,n,k,progress,time_start,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound):
@@ -1156,10 +1222,12 @@ def quarter_selector(alphas,n,k,progress,time_start,total,functional,initial_gue
     progress_updt = val1[2]
     val2=cv_loss(a_q,alphas,n,k,progress_updt,time_start,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
     alphas=np.delete(alphas,[p,q])
+    
     if val1[1] < val2[1]:
         alphas=alphas[:quart_a-2]
         return val1[0],alphas,val1[1],val2[2],a_p
     else:
+        
         alphas=alphas[quart_a-1:len_a-2]
         return val2[0],alphas,val2[1],val2[2],a_q
     
@@ -1209,13 +1277,17 @@ def rmle_2d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
     trans_matrix = tmat.Tmat
     lepskii_matches = ['lep','lepskii','lepskii\'s principle', 'lp']
     cv_matches = ['cv','cross','cross val', 'validation','crossvalidation','cross-validation']
+    
     if '3d' in str(functional.__name__):
         raise ValueError("The 2-dimensional implementation requires a matching 2-dimensional functional. \
 Try to supply any of the accepted functional values: {likelihood, norm_sq, sobolev, entropy}")
+        
     if initial_guess is not None:
         initial_guess = initial_guess
+        
     else:
         initial_guess = initial_gauss(tmat.grid)
+        
     if not jacobian:
         if functional == likelihood:
             jacobian = jac_likelihood
@@ -1225,33 +1297,47 @@ Try to supply any of the accepted functional values: {likelihood, norm_sq, sobol
             jacobian = jac_sobolev
         elif functional == entropy:
             jacobian =  jac_entropy
+            
     else:
         jacobian = jacobian
+        
     if not hessian_method:
         hessian_method = '2-point'
+        
     else:
         hessian_method = hessian_method
+        
     if not constraints:
         linear_constraint=scop.LinearConstraint([step_size**2]*len(initial_guess),[1],[1])
         constraints = linear_constraint
+        
     else:
         constraints = constraints
+        
     if not tolerance:
         tolerance = 1e-12
+        
     else:
         tolerance = tolerance
+        
     if not max_iter:
         max_iter = 10*m
+        
     else: 
         max_iter = max_iter
+        
     if not bounds:
         bound = scop.Bounds(0,np.inf)
+        
     else:
         bound = bounds
+        
     if not k:
         k = 10
+        
     else:
         k = k
+        
     if any(c in str.lower(str(alpha)) for c in lepskii_matches):
         r=1.2
         alphas=alpha_lep(70,n,r)
@@ -1260,12 +1346,14 @@ Try to supply any of the accepted functional values: {likelihood, norm_sq, sobol
         i_range=np.arange(0,len(alphas))
         j=0
         times=[]
+        
         for a in alphas:
             rec = scop.minimize(functional,initial_guess,args=(a,n,trans_matrix_long,step_size),method='trust-constr',jac=jacobian,hess=hessian_method,constraints=[constraints],tol=tolerance,options={'verbose': False,'maxiter': max_iter},bounds=bound)
             reconstructions.append(rec.x)
             j+=1
             updt(total,j)
         approx_errs = []
+        
         for i in range(1,len(reconstructions)):
             jj=0
             approx_error = []
@@ -1275,9 +1363,11 @@ Try to supply any of the accepted functional values: {likelihood, norm_sq, sobol
             approx_errs.append(approx_error)
         prop_errors=prop_n(r,2,i_range)
         diffs=[]
+        
         for p in approx_errs:
             n_p = int(len(p))
             diffs.append(np.array(prop_errors[:n_p])-np.array(p))
+            
         index=index_finder(diffs)
         et = time.time()
         details = {
@@ -1288,7 +1378,9 @@ Try to supply any of the accepted functional values: {likelihood, norm_sq, sobol
             "Total Run Time": str(et-st) + ' seconds',
             "Numer of Lepskii iterations": len(alphas)
         }
+        
         return RMLEResult(f=reconstructions[index],alpha=alphas[index],alpmth='Lepskii',T=tmat,details=details)
+    
     if any(c in str.lower(str(alpha)) for c in cv_matches):
         alphas=alpha_vals(step_size*3,30)
         lhood=[]
@@ -1298,6 +1390,7 @@ Try to supply any of the accepted functional values: {likelihood, norm_sq, sobol
         time_start = time.time()
         j=0
         total = np.ceil((np.log(4)-np.log(len(alphas)))/(0.25*np.log(0.25)+0.75*np.log(0.75)))*4 * k
+        
         while len(alphas)> 4:
             val=quarter_selector(alphas,n,k,j,time_start,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
             lhood.append(val[2])
@@ -1305,12 +1398,14 @@ Try to supply any of the accepted functional values: {likelihood, norm_sq, sobol
             j=val[3]
             alphas=val[1]
             alpha_list.append(val[4])
+            
         for a in alphas:
             val=cv_loss(a,alphas,n,k,j,time_start,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
             lhood.append(val[1])
             reconstructions.append(val[0])
             alpha_list.append(a)
             j=val[2]
+            
         index=np.int(np.where(lhood==np.min(lhood))[0])
         updt_cv(total,total,time_start)
         et = time.time()
@@ -1323,6 +1418,7 @@ Try to supply any of the accepted functional values: {likelihood, norm_sq, sobol
             "Number of CV iterations": j,
         }
         return RMLEResult(f=reconstructions[index],alpha=alpha_list[index],alpmth='CV',T=tmat,details=details)
+    
     else:
         result = scop.minimize(functional,initial_guess,args=(alpha,n,trans_matrix_long,step_size),method='trust-constr',jac=jacobian,hess=hessian_method,constraints=[constraints],tol=tolerance,options={'verbose': 0,'maxiter': max_iter},bounds=bound)
         et = time.time()
@@ -1335,11 +1431,13 @@ Try to supply any of the accepted functional values: {likelihood, norm_sq, sobol
             "Iterations": result.niter,
             "Optimization Run Time": result.execution_time,
         }
+        
         return RMLEResult(f=result.x,alpha=alpha,alpmth='User',T=tmat,details=details)
 
 def edge_check(p,start,end):
     """ This function checks if the coordinates of a point lies at the edge of a grid. It returns a list of boolean values."""
     check=[]
+    
     for i in p:
         check.append((i-end)==0 or (i-start)==0)
     return check
@@ -1354,8 +1452,10 @@ def get_index(point,interval,k):
     the grid the point lies in. """
     interval_round=np.array([round(i,8) for i in interval])
     x=[]
+    
     for p in point:
         x.append(max(np.where(interval_round>=p)[0][0]-1,0))
+        
     index = x[0] + x[1]*k**(1/3) + x[2]*k**(2/3)
     return np.ceil(index)
 
@@ -1363,6 +1463,7 @@ def point_check(point,start,end):
         """ This function checks if the coordinates of a point lies at the edge of a grid. It returns a list of 
         boolean values. """
         check=0
+        
         for i in point:
             if i == start or i == end:
                 check+=1
@@ -1371,6 +1472,7 @@ def point_check(point,start,end):
 def vertex_check(point,interval):
     """ This function checks if a point has coordinates that lies on the grid, but are not on outer-edges. """
     val = 0
+    
     for p in point:
         if p in interval:
             val+=1
@@ -1385,20 +1487,24 @@ def get_box_index(point,start,end,step_size,interval,ks):
     if point_check(point,start,end) ==3: #case for outer-vertex
         indices = np.array([get_index(point,interval,ks[2])],dtype=int) 
         return list(indices)
+    
     elif ((point_check(point,start,end) == 2) and  vertex_check(point,interval) == 3): 
         #case for corner-outer-edge vertex
         if (abs(point[1])-abs(start)==0 and abs(point[2])-abs(start)==0) or (abs(point[1])-abs(end)==0 and abs(point[2])-abs(end)==0):
             indices = np.array([get_index(point,interval,ks[2])] * 2,dtype=int)
             adjustments = np.array([0,1],dtype=int)
             return list(indices+adjustments)
+        
         elif (abs(point[0])-abs(start)==0 and abs(point[2])-abs(start)==0) or (abs(point[0])-abs(end)==0 and abs(point[2])-abs(end)==0):
             indices = np.array([get_index(point,interval,ks[2])] * 2,dtype=int)
             adjustments = np.array([0,ks[0]],dtype=int)
             return list(indices+adjustments) 
+        
         elif (abs(point[0])-abs(start)==0 and abs(point[1])-abs(start)==0) or (abs(point[0])-abs(end)==0 and abs(point[1])-abs(end)==0):
             indices = np.array([get_index(point,interval,ks[2])] * 2,dtype=int)
             adjustments = np.array([0,ks[1]],dtype=int)
-            return list(indices+adjustments)         
+            return list(indices+adjustments) 
+        
     elif ((sum((abs(point)-abs(start))==0) == 1 or sum((abs(point)-abs(end))==0) == 1) and vertex_check(point,interval) == 3): 
         #case for side-outer-edge vertex
         #cases for different axes
@@ -1406,58 +1512,76 @@ def get_box_index(point,start,end,step_size,interval,ks):
             indices = np.array([get_index(point,interval,ks[2])] * 4,dtype=int)
             adjustments = np.array([0,1,ks[1],ks[1]+1],dtype=int)
             return list(indices+adjustments)
+        
         elif (abs(point[0])-abs(start)==0) or (abs(point[0])-abs(end)==0):
             indices = np.array([get_index(point,interval,ks[2])] * 4,dtype=int)
             adjustments = np.array([0,ks[0],ks[1],ks[1]+ks[0]],dtype=int)
             return list(indices+adjustments)
+        
         elif abs(point[2])-abs(start)==0:
             indices = np.array([get_index(point,interval,ks[2])] * 4,dtype=int)
             adjustments = np.array([0,1,ks[0],ks[0]+1],dtype=int)
             return list(indices+adjustments)
+        
     elif vertex_check(point,interval) == 3: #case for inner-vertex
         indices = np.array([get_index(point,interval,ks[2])] * 8,dtype=int)
         adjustments = np.array([0,1,ks[0],ks[0]+1,ks[1],ks[1]+1,+ks[0]+ks[1],ks[0]+ks[1]+1],dtype=int)
         return list(indices+adjustments)
+    
     elif sum(edge_check(point,start,end))==2: #case for outermost-edge
         indices = np.array([get_index(point,interval,ks[2])],dtype=int) 
         return list(indices)
+    
     elif sum(edge_check(point,start,end))==1: #case for outer-edge
+        
         if outer_edge_check(point[1],start,end): #change np.logic
+            
             if point[0] in interval:
                 indices = np.array([get_index(point,interval,ks[2])]*2,dtype=int)
                 adjustments = np.array([0,1])
                 return list(indices+adjustments)
+            
             else:
                 indices = np.array([get_index(point,interval,ks[2])]*2,dtype=int)
                 adjustments = np.array([0,ks[1]])
-                return list(indices+adjustments)                
+                return list(indices+adjustments) 
+            
         elif outer_edge_check(point[0],start,end):
+            
             if point[1] in interval:
                 indices = np.array([get_index(point,interval,ks[2])]*2,dtype=int)
                 adjustments = np.array([0,ks[0]])
                 return list(indices+adjustments)
+            
             else:
                 indices = np.array([get_index(point,interval,ks[2])]*2,dtype=int)
                 adjustments = np.array([0,ks[1]])
                 return list(indices+adjustments)  
+            
         elif outer_edge_check(point[2],start,end):
+            
             if point[0] in interval:
                 indices = np.array([get_index(point,interval,ks[2])]*2,dtype=int)
                 adjustments = np.array([0,1])
                 return list(indices+adjustments)
+            
             else:
                 indices = np.array([get_index(point,interval,ks[2])]*2,dtype=int)
                 adjustments = np.array([0,ks[0]])
                 return list(indices+adjustments)  
-    elif vertex_check(point,interval)==2 : #case for inner-edge #needs more cases
+            
+    elif vertex_check(point,interval)==2 : #case for inner-edge
+        
         if point[0] not in interval:
             indices = np.array([get_index(point,interval,ks[2])]*4,dtype=int)
             adjustments = np.array([0,ks[0],ks[1],ks[0]+ks[1]])
             return list(indices+adjustments)
+        
         elif point[1] not in interval:
             indices = np.array([get_index(point,interval,ks[2])]*4,dtype=int)
             adjustments = np.array([0,1,ks[1],ks[1]+1])
             return list(indices+adjustments)
+        
         elif point[2] not in interval:
             indices = np.array([get_index(point,interval,ks[2])]*4,dtype=int)
             adjustments = np.array([0,1,ks[0],ks[0]+1])
@@ -1471,13 +1595,18 @@ def angle(v1,v2):
     prod = np.dot(v1[0:2],v2[0:2])
     det = v1[0]*v2[1] - v1[1]*v2[0]
     temp_cos = prod/np.linalg.norm(v1[0:2])/np.linalg.norm(v2[0:2])
+    
     if temp_cos >=0:
         cos_t = min(1,temp_cos)
+        
     else:
         cos_t = max(-1,temp_cos)
+        
     theta =  np.arccos(cos_t)
+    
     if det <=0:
         return theta
+    
     else:
         return theta + np.pi
 
@@ -1490,8 +1619,10 @@ def point_sorter(points):
     projs = [i[0:2] for i in vects]
     sorted_points = []
     angles = []
+    
     for i in range(len(projs)):
         angles.append(angle(projs[0], projs[i]))
+        
     idx = np.argsort(angles)
     points = np.array(points)
     sorted_points = points[idx]
@@ -1503,6 +1634,7 @@ def area_poly(points):
     they are sorted.
     """
     area = 0.5 * abs(points[0][0] * points[-1][1] - points[0][1] * points[-1][0])
+    
     for i in range(len(points) - 1):
         area += 0.5 * abs(points[i][0] * points[i + 1][1] - points[i][1] * points[i + 1][0])
     return area
@@ -1513,6 +1645,7 @@ def ransample(n,pi,mu,sigma):
     y=np.zeros((n))
     z=np.zeros((n))
     k=np.random.choice(len(pi),n,p=pi,replace=True)
+    
     for i in range(0,len(k)):
         x[i],y[i],z[i]=np.random.multivariate_normal(mu[k[i]],sigma[k[i]],1).T
     return x,y,z
@@ -1533,50 +1666,67 @@ def transmatrix_3d(sample,grid):
     end = grid.end
     ks = grid.ks()
     step = grid.step
+    
     for n in range(0,len(xy_sample)):
         b0_based_intersections = []
         b1_based_intersections = []
         b2_based_intersections = []
+        
         for i in b1s:
+            
             for j in b2s:
                 b0_int = (xy_sample[n,3] - i*xy_sample[n,1] - j*xy_sample[n,2])/xy_sample[n,0]
                 if b0_int >= start and b0_int <= end:
                     b0_based_intersections.append(tuple([b0_int,i,j]))
+                    
         for i in b0s:
+            
             for j in b2s:
                 b1_int = (xy_sample[n,3] - i*xy_sample[n,0] - j*xy_sample[n,2])/xy_sample[n,1]
                 if b1_int >= start and b1_int <= end:
                     b1_based_intersections.append(tuple([i,b1_int,j]))
+                    
         for i in b0s:
+            
             for j in b1s:
                 b2_int = (xy_sample[n,3] - i*xy_sample[n,0] - j*xy_sample[n,1])/xy_sample[n,2]
                 if b2_int >= start and b2_int <= end:
                     b2_based_intersections.append(tuple([i,j,b2_int]))
+                    
         b0_based_intersections.extend(b1_based_intersections)
         b0_based_intersections.extend(b2_based_intersections)
         intersection_points = b0_based_intersections  
         intersect_points = list(set(intersection_points))
         test_list = [[] for i in range(0,ks[2])]
+        
         for p in intersect_points:
             indices=get_box_index(np.array(p),start,end,step,interval,ks)
+            
             for i in indices:
                 test_list[i].append(np.array(p))
+                
         areas = [[] for i in range(0,ks[2])]
         i = 0
+        
         for ps in test_list:
             if len(ps) > 2:
                 areas[i].append(area_poly(point_sorter(ps)))
                 i+=1
+                
             else:
                 areas[i].append(0)
                 i+=1
+                
         areas_flat = []
+        
         for sublist in areas:
             for i in sublist:
                 areas_flat.append(i)
         area_indices = list(np.where(np.array(areas_flat)>0)[0])
+        
         for i in area_indices:
             L[n][i]=areas_flat[i]
+            
     L= L[~np.all(L==0, axis=1)]
     return tmatrix(Tmat=L,grid=grid,scaled_sample=xy_sample,sample=sample.sample)
 
@@ -1726,13 +1876,17 @@ def rmle_3d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
     sample = tmat.sample.copy()
     lepskii_matches = ['lep','lepskii','lepskii\'s principle', 'lp']
     cv_matches = ['cv','cross','cross val', 'validation','crossvalidation','cross-validation']
+    
     if '3d' not in str(functional.__name__):
         raise ValueError("The 3-dimensional implementation requires a matching 3-dimensional functional. \
 Try to supply any of the accepted functional values: {likelihood_3d, norm_sq_3d, sobolev_3d, entropy_3d}")
+        
     if initial_guess is not None:
         initial_guess = initial_guess
+        
     else:
         initial_guess = initial_gauss(tmat.grid)
+        
     if not jacobian:
         if functional == sobolev_3d:
             jacobian = jac_sobolev_3d
@@ -1744,36 +1898,50 @@ Try to supply any of the accepted functional values: {likelihood_3d, norm_sq_3d,
             jacobian = jac_entropy_3d
         else: 
             jacobian = jacobian
+            
     if not hessian_method:
         hessian_method = '2-point'
+        
     else:
         hessian_method = hessian_method
+        
     if not constraints:
         linear_constraint=scop.LinearConstraint([step_size**3]*len(initial_guess),[1],[1])
         constraints = linear_constraint
+        
     else:
         constraints = constraints
+        
     if not tolerance:
         tolerance = 1e-12
+        
     else:
         tolerance = tolerance
+        
     if not max_iter:
         max_iter = 10*m
+        
     else: 
         max_iter = max_iter
+        
     if not bounds:
         bound = scop.Bounds(0,np.inf)
+        
     else:
         bound = bounds
+        
     if not k:
         k = 10
+        
     else:
         k = k
+        
     if shift == True:
         num_shifts = 10
         reconstructions = []
         shift_tmatrix_list = []
         i=0
+        
         while i < num_shifts:
             shifts = np.array([np.random.uniform(1,2.5)/tmat.grid.b0,0,0]) + np.array(tmat.grid.shifts)
             shifted_grid = grid_obj(interval=tmat.grid.interval,scale=tmat.grid.scale, shifts = shifts, dim=tmat.grid.dim,step=step_size,start=tmat.grid.start,end=tmat.grid.end)
@@ -1785,9 +1953,11 @@ Try to supply any of the accepted functional values: {likelihood_3d, norm_sq_3d,
             reconstructions.append(rec.x)
             i+=1
             updt(num_shifts, i)
+            
         l2s = []
         for r in reconstructions:
             l2s.append(np.linalg.norm(r))
+            
         l2_arr = np.array(l2s).reshape(-1,1)
         kmeans = KMeans(n_clusters = 2, init = 'k-means++', max_iter = 300, n_init = 10, random_state=0)
         ys = kmeans.fit_predict(l2_arr)
@@ -1807,6 +1977,7 @@ Try to supply any of the accepted functional values: {likelihood_3d, norm_sq_3d,
             "Number of Shifts Applied": num_shifts,
         }
         return RMLEResult(f=reconstructions[min_index],alpha=alpha,alpmth='User',T=shifted_tmatrix,details=details)
+    
     if any(c in str.lower(str(alpha)) for c in lepskii_matches):
         r=1.2
         alphas=alpha_lep(70,n,r)
@@ -1815,21 +1986,25 @@ Try to supply any of the accepted functional values: {likelihood_3d, norm_sq_3d,
         i_range=np.arange(0,len(alphas))
         j=0
         times=[]
+        
         for a in alphas:
             rec = scop.minimize(functional,initial_guess,args=(a,n,trans_matrix_long,step_size),method='trust-constr',jac=jacobian,hess=hessian_method,constraints=[constraints],tol=tolerance,options={'verbose': False,'maxiter': max_iter},bounds=bound)
             reconstructions.append(rec.x)
             j+=1
             updt(total,j)
         approx_errs = []
+        
         for i in range(1,len(reconstructions)):
             jj=0
             approx_error = []
+            
             while jj < i:
                 approx_error.append(np.linalg.norm(reconstructions[i]-reconstructions[jj]))
                 jj+=1
             approx_errs.append(approx_error)
         prop_errors=prop_n(r,2,i_range)
         diffs=[]
+        
         for p in approx_errs:
             n_p = int(len(p))
             diffs.append(np.array(prop_errors[:n_p])-np.array(p))
@@ -1853,6 +2028,7 @@ Try to supply any of the accepted functional values: {likelihood_3d, norm_sq_3d,
         time_start = time.time()
         j=0
         total = np.ceil((np.log(4)-np.log(len(alphas)))/(0.25*np.log(0.25)+0.75*np.log(0.75)))*4 * k
+        
         while len(alphas) > 4:
             val=quarter_selector(alphas,n,k,j,time_start,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
             lhood.append(val[2])
@@ -1860,6 +2036,7 @@ Try to supply any of the accepted functional values: {likelihood_3d, norm_sq_3d,
             j=val[3]
             alphas=val[1]
             alpha_list.append(val[4])
+            
         for a in alphas:
             val=cv_loss(a,alphas,n,k,j,time_start,total,functional,initial_guess,trans_matrix,trans_matrix_long,step_size,jacobian,hessian_method,constraints,tolerance,max_iter,bound)
             lhood.append(val[1])
@@ -1878,6 +2055,7 @@ Try to supply any of the accepted functional values: {likelihood_3d, norm_sq_3d,
             "Number of CV iterations": j
         }
         return RMLEResult(f=reconstructions[index],alpha=alpha_list[index],alpmth='CV',T=tmat,details=details)
+    
     else:
         result = scop.minimize(functional,initial_guess,args=(alpha,n,trans_matrix_long,step_size),method='trust-constr',jac=jacobian,hess=hessian_method,constraints=[constraints],tol=tolerance,options={'verbose': 0,'maxiter': max_iter},bounds=bound)
         et = time.time()
@@ -1895,11 +2073,13 @@ Try to supply any of the accepted functional values: {likelihood_3d, norm_sq_3d,
 def scale_sample(xy_sample,grid):
     """ This function is used to apply the shifts and scaling to the sample. """
     sample = xy_sample.copy()
+    
     if grid.dim == 2:
         sample[:,2] = sample[:,2] + grid.shifts[0]*sample[:,0] + grid.shifts[1]*sample[:,1]
         sample[:,0] = sample[:,0]/grid.b0
         sample[:,1] = sample[:,1]/grid.b1 
         return sample
+    
     else:
         sample[:,3] = sample[:,3] + grid.shifts[0]*sample[:,0] + grid.shifts[1]*sample[:,1] + grid.shifts[2]*sample[:,2]
         sample[:,0] = sample[:,0]/grid.b0
@@ -1924,6 +2104,7 @@ def shift_sample(sample,base_shifts):
     shift_sample_obs = sample.copy()
     n = np.shape(shift_sample_obs)[1]
     shifts = [np.random.uniform(1,2.5) for i in range(0,n-1)] + np.array(base_shifts)
+    
     for i in range(0,n-1):
         shift_sample_obs[:,n-1]=shifts[i]*shift_sample_obs[:,i]+shift_sample_obs[:,n-1]
     return shft_sample_obj(shift_sample_obs,shifts)
