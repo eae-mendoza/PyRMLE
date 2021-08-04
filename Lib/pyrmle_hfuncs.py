@@ -867,9 +867,8 @@ def likelihood(f,n,L_mat_long):
     """ This function is the log-likelihood functional without a regularization 
     term.
     """
-    import numpy as np
     L_mat=L_mat_long.reshape(n,len(f))
-    f[f<0]=10**-6
+    f[f<0]=1e-6
     val=np.log(np.dot(L_mat,f))
     return -sum(val)/n
 
@@ -877,9 +876,8 @@ def norm_sq(f,alpha,n,L_mat_long,step):
     """ This function is the log-likelihood functional with the squared L2 norm 
     of \hat{f_\beta} as the regularization term.
     """
-    import numpy as np
     L_mat=L_mat_long.reshape(n,len(f))
-    f[f<0]=10**-6
+    f[f<0]=1e-6
     val=np.log(np.dot(L_mat,f))
     return -sum(val)/n+ alpha*step**2*sum(f**2)
 
@@ -887,9 +885,8 @@ def sobolev(f,alpha,n,L_mat_long,step):
     """ This function is the log-likelihood functional with the sobolev norm 
     for H1 as the regularization term.
     """
-    import numpy as np
     L_mat=L_mat_long.reshape(n,len(f))
-    f[f<0]=10**-6
+    f[f<0]=1e-6
     val=-np.sum(np.log(np.dot(L_mat,f)))/n
     penal=alpha*step**2*sum(f**2)+alpha*step**2*norm_fprime(f,step)
     return val + penal
@@ -898,29 +895,25 @@ def entropy(f,alpha,n,L_mat_long,step):
     """ This function is the log-likelihood functional with the entropy of \hat{f_\beta} 
     as the regularization term.
     """
-    import numpy as np
     L_mat=L_mat_long.reshape(n,len(f))
-    f[f<0]=10**-6
+    f[f<0]=1e-6
     val=np.log(np.dot(L_mat,f))
     return -sum(val)/n + alpha*step**2*sum(f*np.log(f))
 
 def tot_deriv(f,step):
     """ This function comutes the total derivative of f"""
-    import numpy as np
     f=f.reshape(int(np.sqrt(len(f))),int(np.sqrt(len(f))))
     fgrad=np.gradient(f,step)
     return np.ravel((np.sqrt(fgrad[0]**2+fgrad[1]**2)))
 
 def norm_fprime(f,step):
     """ This function computes d/df (||f||^{2}_{2}). """
-    import numpy as np
     f=f.reshape(int(np.sqrt(len(f))),int(np.sqrt(len(f))))
     fgrad=np.gradient(f,step)
     return sum(np.ravel((fgrad[0]**2+fgrad[1]**2)))
 
 def second_deriv(f,step):
     """ This function computes the Laplacian of f."""
-    import numpy as np
     f=f.reshape(int(np.sqrt(len(f))),int(np.sqrt(len(f))))
     fgrad0=np.ravel(np.gradient(np.gradient(f,step)[0],step)[0])
     fgrad1=np.ravel(np.gradient(np.gradient(f,step)[1],step)[1])
@@ -930,7 +923,7 @@ def jac_likelihood(f,n,L_mat_long):
     """ This function computes the jacobian of the regularization
     functional without any penalty term.
     """
-    import numpy as np
+    f[f<0]=1e-6
     L_mat=L_mat_long.reshape(n,len(f))
     denom=np.dot(L_mat,f)
     val=L_mat.T/denom
@@ -941,7 +934,7 @@ def jac_norm_sq(f,alpha,n,L_mat_long,step):
     """ This function computes the jacobian of the regularization 
     functional with the squared L2 norm penalty.
     """
-    import numpy as np
+    f[f<0]=1e-6
     L_mat=L_mat_long.reshape(n,len(f))
     denom=np.dot(L_mat,f)
     val=L_mat.T/denom
@@ -956,7 +949,7 @@ def jac_sobolev(f,alpha,n,L_mat_long,step):
     """ This function computes the jacobian of the regularization
     functional with the H1 penalty.
     """
-    import numpy as np
+    f[f < 0] = 1e-6
     L_mat=L_mat_long.reshape(n,len(f))
     denom=np.dot(L_mat,f)
     val=L_mat.T/denom
@@ -966,7 +959,7 @@ def jac_entropy(f,alpha,n,L_mat_long,step):
     """ This function computes the jacobian of the regularization
     functional with the entropy penalty.
     """
-    import numpy as np
+    f[f < 0] = 1e-6
     L_mat=L_mat_long.reshape(n,len(f))
     denom=np.dot(L_mat,f)
     val=L_mat.T/denom
@@ -1600,16 +1593,14 @@ def likelihood_3d(f,n,L_mat_long):
     """ This function is the log-likelihood functional without a regularization 
     term.
     """
-    import numpy as np
     L_mat=L_mat_long.reshape(n,len(f))
-    f[f<0]=10**-6
+    f[f<0]=1e-6
     val=np.log(np.dot(L_mat,f))
     return -sum(val)/n
 
 def sobolev_3d(f,alpha,n,L_mat_long,step):
     """ This function computes the value of the functional with the H1 penalty for the 3-d 
     implementation of the method."""
-    import numpy as np
     L_mat=L_mat_long.reshape(n,len(f))
     f[f<0]=0
     f=f+10e-3
@@ -1626,8 +1617,7 @@ def jac_sobolev_3d(f,alpha,n,L_mat_long,step):
     """ This function computes the value of the jacobian of the functional with the H1 penalty for
     the 3-d implementation of the method.
     """
-    import numpy as np
-    f=f+10e-3
+    f[f<0]=1e-6
     L_mat=L_mat_long.reshape(n,len(f))
     denom=np.dot(L_mat,f)
     val=L_mat.T/denom
@@ -1636,9 +1626,8 @@ def jac_sobolev_3d(f,alpha,n,L_mat_long,step):
 def norm_sq_3d(f,alpha,n,L_mat_long,step):
     """ This function comptues the value of the functional with the squared L2 norm penalty for the 3-d 
     implementation of the method."""
-    import numpy as np
     L_mat=L_mat_long.reshape(n,len(f))
-    f[f<0]=10**-6
+    f[f<0]=1e-6
     val=np.log(np.dot(L_mat,f))
     return -sum(val)/n+ alpha*step**3*sum(f**2)
 
@@ -1646,7 +1635,7 @@ def entropy_3d(f,alpha,n,L_mat_long,step):
     """ This function comptues the value of the functional with the entropy penalty for the 3-d 
     implementation of the method."""
     L_mat=L_mat_long.reshape(n,len(f))
-    f[f<0]=10**-6
+    f[f<0]=1e-6
     val=np.log(np.dot(L_mat,f))
     return -sum(val)/n + alpha*step**3*sum(f*np.log(f))
 
@@ -1655,6 +1644,7 @@ def jac_likelihood_3d(f,n,L_mat_long):
     """ This function computes the jacobian of the regularization
     functional without any penalty term.
     """
+    f[f < 0] = 1e-6
     L_mat=L_mat_long.reshape(n,len(f))
     denom=np.dot(L_mat,f)
     val=L_mat.T/denom
@@ -1665,6 +1655,7 @@ def jac_norm_sq_3d(f,alpha,n,L_mat_long,step):
     """ This function computes the value of the jacobian of the functional with the squared L2 norm penalty for
     the 3-d implementation of the method.
     """
+    f[f < 0] = 1e-6
     L_mat=L_mat_long.reshape(n,len(f))
     denom=np.dot(L_mat,f)
     val=L_mat.T/denom
@@ -1675,14 +1666,14 @@ def jac_entropy_3d(f,alpha,n,L_mat_long,step):
     the 3-d implementation of the method.
     """
     L_mat=L_mat_long.reshape(n,len(f))
-    f[f<0]=10**-6
+    f[f<0]=1e-6
     denom=np.dot(L_mat,f)
     val=L_mat.T/denom
     return -val.T.sum(axis=0)/n+alpha*step**3*(np.log(f)+1)
 
 def likelihood_l(f,L,n):
     L=L.reshape(n,len(f))
-    f[f<0]=10**-16
+    f[f<0]=1e-6
     val=np.log(np.dot(L,f))
     return -sum(val)
 
@@ -1790,9 +1781,10 @@ Try to supply any of the accepted functional values: {likelihood_3d, norm_sq_3d,
             n=shift_tmatrix.n()
             shift_tmatrix_list.append(shift_tmatrix)
             shift_trans_matrix_long = np.ravel(shift_tmatrix.Tmat)
-            rec = scop.minimize(functional,initial_guess,args=(alpha,n,shift_trans_matrix_long,step_size),method='trust-constr',jac=jacobian,hess=hessian_method,constraints=[constraints],tol=tolerance,options={'verbose': 1,'maxiter': max_iter},bounds=bound)
+            rec = scop.minimize(functional,initial_guess,args=(alpha,n,shift_trans_matrix_long,step_size),method='trust-constr',jac=jacobian,hess=hessian_method,constraints=[constraints],tol=tolerance,options={'verbose': 0,'maxiter': max_iter},bounds=bound)
             reconstructions.append(rec.x)
             i+=1
+            updt(num_shifts, i)
         l2s = []
         for r in reconstructions:
             l2s.append(np.linalg.norm(r))
