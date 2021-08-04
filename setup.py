@@ -1,5 +1,5 @@
 import pathlib
-from setuptools import setup
+from setuptools import setup, find_packages
 
 # The directory containing this file
 HERE = pathlib.Path(__file__).parent
@@ -12,11 +12,11 @@ README = (HERE / "README.md").read_text()
 if __name__ == "__main__":
     setup(
         name="pyrmle",
-        version="1.0.0",
+        version="0.0.1-4",
         description="Python package for implementing Regularized Maximum Likelihood for Random Coefficient Models",
         long_description=README,
         url="https://github.com/eae-mendoza/PyRMLE",
-        author="Emil Alfred Edgar N. Mendoza",
+        author="Mendoza, E.",
         author_email="emil.edgar.mendoza@gmail.com",
         license="BSD",
         classifiers=[
@@ -26,7 +26,7 @@ if __name__ == "__main__":
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9"
         ],
-        packages=["pyrmle","pyrmle_hfuncs"],
+        packages=find_packages(),
         include_package_data=True,
         install_requires=["scipy","sklearn","matplotlib"],
     )
