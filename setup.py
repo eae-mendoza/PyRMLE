@@ -12,7 +12,7 @@ README = (HERE / "README.md").read_text()
 if __name__ == "__main__":
     setup(
         name="pyrmle",
-        version="0.0.1-4",
+        version="0.0.2-7",
         description="Python package for implementing Regularized Maximum Likelihood for Random Coefficient Models",
         long_description=README,
         url="https://github.com/eae-mendoza/PyRMLE",
@@ -26,7 +26,7 @@ if __name__ == "__main__":
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9"
         ],
-        packages=find_packages(),
+        packages=["pyrmle"],
         include_package_data=True,
         install_requires=["scipy","sklearn","matplotlib"],
     )
