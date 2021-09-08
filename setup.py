@@ -12,7 +12,7 @@ README = (HERE / "README.md").read_text()
 if __name__ == "__main__":
     setup(
         name="pyrmle",
-        version="0.0.2-7",
+        version="0.0.3-4",
         description="Python package for implementing Regularized Maximum Likelihood for Random Coefficient Models",
         long_description=README,
         url="https://github.com/eae-mendoza/PyRMLE",

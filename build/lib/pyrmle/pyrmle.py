@@ -67,55 +67,60 @@ def sim_sample(n,d,x_params=None,beta_pi=None,beta_mu=None,beta_cov=None):
     else:
         return sim_sample3d(n,x_params,beta_pi,beta_mu,beta_cov)
 
-def spline_fit(result,num_grid_points):
+def spline_fit(result, num_grid_points):
     dim = result.dim
-    
+
     if dim == 2:
         spline_x = result.grid.b0_grid_points
         spline_y = result.grid.b1_grid_points
         spline_z = result.f_shaped
-        f = sp.interpolate.interp2d(spline_x, spline_y, spline_z, kind='cubic')
+        f = sp.interpolate.interp2d(spline_x, spline_y, np.sqrt(spline_z), kind='cubic')
         x_grid = np.linspace(spline_x[0], spline_x[-1], num_grid_points)
         y_grid = np.linspace(spline_y[0], spline_y[-1], num_grid_points)
         x_mesh, y_mesh = np.meshgrid(x_grid, y_grid)
-        spline_znew = f(x_grid, y_grid)
-        spline_grid = spline_grid_obj(num_grid_points = num_grid_points, b0_grid_points=x_grid,b1_grid_points=y_grid,b2_grid_points=None,dim=dim,scale=result.grid.scale,shifts=result.grid.shifts)
-        
-        return SplineResult(f= np.ravel(spline_znew), f_shaped= spline_znew, joint_marginals= None, spline_grid= spline_grid)
-    
+        spline_znew = f(x_grid, y_grid)**2
+        spline_grid = spline_grid_obj(num_grid_points=num_grid_points, b0_grid_points=x_grid, b1_grid_points=y_grid,
+                                      b2_grid_points=None, dim=dim, scale=result.grid.scale, shifts=result.grid.shifts)
+
+        return SplineResult(f=np.ravel(spline_znew), f_shaped=spline_znew, joint_marginals=None,
+                            spline_grid=spline_grid)
+
     elif dim == 3:
         # 3-D array interpolation
         spline_x = result.grid.b0_grid_points
         spline_y = result.grid.b1_grid_points
         spline_z = result.grid.b2_grid_points
-        
+
         gg = result.f_shaped
-        
-        interp_func = sp.interpolate.RegularGridInterpolator((spline_x, spline_y, spline_z), gg)
-        
+
+        interp_func = sp.interpolate.RegularGridInterpolator((spline_x, spline_y, spline_z), np.sqrt(gg))
+
         x_grid = np.linspace(spline_x[0], spline_x[-1], num_grid_points)
         y_grid = np.linspace(spline_y[0], spline_y[-1], num_grid_points)
         z_grid = np.linspace(spline_z[0], spline_z[-1], num_grid_points)
-        
+
         xg, yg, zg = np.meshgrid(x_grid, y_grid, z_grid)
-        interp_znew = interp_func((xg, yg, zg))
+        interp_znew = interp_func((xg, yg, zg))**2
         # Determine the marginals via smooth spline interpolation
-        
+
         f12 = np.sum(result.f_shaped, axis=2) * (result.grid.b0_grid_points[1] - result.grid.b0_grid_points[0])
         f01 = np.sum(result.f_shaped, axis=0) * (result.grid.b1_grid_points[1] - result.grid.b1_grid_points[0])
         f02 = np.sum(result.f_shaped, axis=1) * (result.grid.b2_grid_points[1] - result.grid.b2_grid_points[0])
-        
-        spline_f01_func = sp.interpolate.interp2d(spline_x, spline_y, f01, kind='cubic')
-        spline_f02_func = sp.interpolate.interp2d(spline_x, spline_z, f01, kind='cubic')
-        spline_f12_func = sp.interpolate.interp2d(spline_y, spline_z, f01, kind='cubic')
-        
-        f01_spline = spline_f01_func(x_grid,y_grid)
-        f02_spline = spline_f02_func(x_grid,z_grid)
-        f12_spline = spline_f12_func(y_grid,z_grid)
-        jmarginals = [f01_spline,f02_spline,f12_spline]
-        spline_grid = spline_grid_obj(num_grid_points = num_grid_points, b0_grid_points=x_grid,b1_grid_points=y_grid,b2_grid_points=z_grid, dim=dim, scale=result.grid.scale,shifts=result.grid.shifts)
-        
-        return SplineResult(f=np.ravel(interp_znew),f_shaped=interp_znew,joint_marginals=  jmarginals, spline_grid = spline_grid)
+
+        spline_f01_func = sp.interpolate.interp2d(spline_x, spline_y, np.sqrt(f01), kind='cubic')
+        spline_f02_func = sp.interpolate.interp2d(spline_x, spline_z, np.sqrt(f02), kind='cubic')
+        spline_f12_func = sp.interpolate.interp2d(spline_y, spline_z, np.sqrt(f12), kind='cubic')
+
+        f01_spline = spline_f01_func(x_grid, y_grid)**2
+        f02_spline = spline_f02_func(x_grid, z_grid)**2
+        f12_spline = spline_f12_func(y_grid, z_grid)**2
+        jmarginals = [f01_spline, f02_spline, f12_spline]
+        spline_grid = spline_grid_obj(num_grid_points=num_grid_points, b0_grid_points=x_grid, b1_grid_points=y_grid,
+                                      b2_grid_points=z_grid, dim=dim, scale=result.grid.scale,
+                                      shifts=result.grid.shifts)
+
+        return SplineResult(f=np.ravel(interp_znew), f_shaped=interp_znew, joint_marginals=jmarginals,
+                            spline_grid=spline_grid)
 
 
 def plot_rmle(result, plt_type=None, save_fig=None):
@@ -269,7 +274,7 @@ def plot_rmle(result, plt_type=None, save_fig=None):
             else:
                 f12 = result.joint_marginals[2]
                 f01 = result.joint_marginals[0]
-                f02 = result.joint_marginals[0]
+                f02 = result.joint_marginals[1]
                 B0 = result.grid.b0_grid_points
                 B1 = result.grid.b1_grid_points
                 B2 = result.grid.b2_grid_points
@@ -321,7 +326,7 @@ def plot_rmle(result, plt_type=None, save_fig=None):
             else:
                 f12 = result.joint_marginals[2]
                 f01 = result.joint_marginals[0]
-                f02 = result.joint_marginals[0]
+                f02 = result.joint_marginals[1]
                 B0 = result.grid.b0_grid_points
                 B1 = result.grid.b1_grid_points
                 B2 = result.grid.b2_grid_points

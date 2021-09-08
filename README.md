@@ -8,4 +8,4 @@ The package's implementation of regularized maximum likelihood is limited to app
 
 There are two main functions used to implement regularized maximum likelihood estimation using PyRMLE, namely: (1) transmatrix() which executes a finite-volume algorithm that is akin to an algebraic reconstruction of the Radon Transform, and (2) rmle() which is a wrapper function of the scipy.optimize.minimize() function that solves the constrained regularized maximum likelihood problem.
 
-For more details check the github repository here: [github](https://github.com/eae-mendoza/PyRMLE)
+For more details check the github repository here: https://github.com/eae-mendoza/PyRMLE

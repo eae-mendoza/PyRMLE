@@ -407,8 +407,6 @@ class SplineResult:
         # Creates the new intervals which corresponds to center of the individual grid-boxes or cubes.
         B0 = self.grid.b0_grid_points
         B1 = self.grid.b1_grid_points
-        B2 = self.grid.b2_grid_points
-        
         if self.dim == 2:
             # Converts the index i obtained previously into grid locations based on the 2-dimensional np.array.
             k = self.grid.ks()[0]
@@ -427,6 +425,7 @@ class SplineResult:
             # Converts the index i obtained previously into grid locations based on the 3-dimensional np.array.
             k = self.grid.ks()[0]
             k2 = self.grid.ks()[1]
+            B2 = self.grid.b2_grid_points
             if i > 0:
                 # Gets index based on first axis
                 x1 = int(i % k)
@@ -450,7 +449,6 @@ class SplineResult:
         modes = []
         B0 = self.grid.b0_grid_points
         B1 = self.grid.b1_grid_points
-        B2 = self.grid.b2_grid_points
         dim = self.grid.dim
         
         if dim == 2:
@@ -496,6 +494,7 @@ class SplineResult:
         else:
             k = self.grid.ks()[0]
             k2 = self.grid.ks()[1]
+            B2 = self.grid.b2_grid_points
             # Index adjustments to get neighboring points for a 3-dimensional np.array
             neighbor_ks = [-1, 1, -k, -(k + 1), -(k - 1), k, k - 1, k + 1, -1 - k2, 1 - k2, -k - k2, -(k + 1) - k2,
                            -(k - 1) - k2, k - k2, k - 1 - k2, k + 1 - k2, -1 + k2, 1 + k2, -k + k2, -(k + 1) + k2,
@@ -538,7 +537,6 @@ class SplineResult:
         # Creates the new intervals which corresponds to center of the individual grid-boxes or cubes.
         B0 = (self.grid.b0_grid_points+self.grid.shifts[0])*self.grid.b0
         B1 = (self.grid.b1_grid_points+self.grid.shifts[1])*self.grid.b1
-        B2 = (self.grid.b2_grid_points+self.grid.shifts[2])*self.grid.b2
         # Initialize the list for expected values
         expected_vals = []
         m = self.grid.ks()[0]
@@ -547,7 +545,7 @@ class SplineResult:
         # Declare the step size of the grid based on the grid used to create the transformation matrix
         b0_step = B0[1]-B0[0]
         b1_step = B1[1]-B1[0]
-        b2_step = B2[1]-B2[0]
+
         
         if self.dim == 2:
             # Reshape \hat{f_\beta} to the it's 2-dimensional np.array form
@@ -561,6 +559,8 @@ class SplineResult:
             f12 = self.joint_marginals[2]
             f02 = self.joint_marginals[1]
             f01 = self.joint_marginals[0]
+            B2 = (self.grid.b2_grid_points + self.grid.shifts[2]) * self.grid.b2
+            b2_step = B2[1] - B2[0]
             expected_vals.append(sum(np.sum(f01, axis=0) * B0 * b0_step * b2_step))
             expected_vals.append(sum(np.sum(f02, axis=1) * B1 * b1_step * b2_step))
             expected_vals.append(sum(np.sum(f12, axis=1) * B2 * b2_step * b0_step))
@@ -935,7 +935,7 @@ def likelihood(f,n,L_mat_long):
     term.
     """
     L_mat=L_mat_long.reshape(n,len(f))
-    f[f<0]=1e-6
+    f[f <=0] = 1e-6
     val=np.log(np.dot(L_mat,f))
     return -sum(val)/n
 
@@ -944,7 +944,7 @@ def norm_sq(f,alpha,n,L_mat_long,step):
     of \hat{f_\beta} as the regularization term.
     """
     L_mat=L_mat_long.reshape(n,len(f))
-    f[f<0]=1e-6
+    f[f <=0] = 1e-6
     val=np.log(np.dot(L_mat,f))
     return -sum(val)/n+ alpha*step**2*sum(f**2)
 
@@ -953,7 +953,7 @@ def sobolev(f,alpha,n,L_mat_long,step):
     for H1 as the regularization term.
     """
     L_mat=L_mat_long.reshape(n,len(f))
-    f[f<0]=1e-6
+    f[f <=0] = 1e-6
     val=-np.sum(np.log(np.dot(L_mat,f)))/n
     penal=alpha*step**2*sum(f**2)+alpha*step**2*norm_fprime(f,step)
     return val + penal
@@ -963,7 +963,7 @@ def entropy(f,alpha,n,L_mat_long,step):
     as the regularization term.
     """
     L_mat=L_mat_long.reshape(n,len(f))
-    f[f<0]=1e-6
+    f[f <=0] = 1e-6
     val=np.log(np.dot(L_mat,f))
     return -sum(val)/n + alpha*step**2*sum(f*np.log(f))
 
@@ -990,7 +990,7 @@ def jac_likelihood(f,n,L_mat_long):
     """ This function computes the jacobian of the regularization
     functional without any penalty term.
     """
-    f[f<0]=1e-6
+    f[f <=0] = 1e-6
     L_mat=L_mat_long.reshape(n,len(f))
     denom=np.dot(L_mat,f)
     val=L_mat.T/denom
@@ -1001,7 +1001,7 @@ def jac_norm_sq(f,alpha,n,L_mat_long,step):
     """ This function computes the jacobian of the regularization 
     functional with the squared L2 norm penalty.
     """
-    f[f<0]=1e-6
+    f[f <=0] = 1e-6
     L_mat=L_mat_long.reshape(n,len(f))
     denom=np.dot(L_mat,f)
     val=L_mat.T/denom
@@ -1011,7 +1011,7 @@ def jac_sobolev(f,alpha,n,L_mat_long,step):
     """ This function computes the jacobian of the regularization
     functional with the H1 penalty.
     """
-    f[f < 0] = 1e-6
+    f[f <=0] = 1e-6
     L_mat=L_mat_long.reshape(n,len(f))
     denom=np.dot(L_mat,f)
     val=L_mat.T/denom
@@ -1021,7 +1021,7 @@ def jac_entropy(f,alpha,n,L_mat_long,step):
     """ This function computes the jacobian of the regularization
     functional with the entropy penalty.
     """
-    f[f < 0] = 1e-6
+    f[f <=0] = 1e-6
     L_mat=L_mat_long.reshape(n,len(f))
     denom=np.dot(L_mat,f)
     val=L_mat.T/denom
@@ -1291,6 +1291,7 @@ def rmle_2d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
     n=tmat.n()
     m=tmat.m()
     step_size = tmat.grid.step
+    scaled_steps = tmat.grid.scaled_steps
     trans_matrix_long = np.ravel(tmat.Tmat)
     trans_matrix = tmat.Tmat
     lepskii_matches = ['lep','lepskii','lepskii\'s principle', 'lp']
@@ -1326,7 +1327,7 @@ Try to supply any of the accepted functional values: {likelihood, norm_sq, sobol
         hessian_method = hessian_method
         
     if not constraints:
-        linear_constraint=scop.LinearConstraint([step_size**2]*len(initial_guess),[1],[1])
+        linear_constraint=scop.LinearConstraint([np.prod(scaled_steps[0:2])]*len(initial_guess),[1],[1])
         constraints = linear_constraint
         
     else:
@@ -1750,7 +1751,7 @@ def transmatrix_3d(sample,grid):
 
 def second_deriv_3d(f,step):
     """ This function computes the Laplacian of f"""
-    f=f+10e-3
+    f[f <=0] = 1e-6
     f=f.reshape(int(np.ceil(len(f)**(1/3))),int(np.ceil(len(f)**(1/3))),int(np.ceil(len(f)**(1/3))))
     fgrad0=np.ravel(np.gradient(np.gradient(f,step)[0],step)[0])
     fgrad1=np.ravel(np.gradient(np.gradient(f,step)[1],step)[1])
@@ -1762,7 +1763,7 @@ def likelihood_3d(f,n,L_mat_long):
     term.
     """
     L_mat=L_mat_long.reshape(n,len(f))
-    f[f<0]=1e-6
+    f[f <=0] = 1e-6
     val=np.log(np.dot(L_mat,f))
     return -sum(val)/n
 
@@ -1770,8 +1771,7 @@ def sobolev_3d(f,alpha,n,L_mat_long,step):
     """ This function computes the value of the functional with the H1 penalty for the 3-d 
     implementation of the method."""
     L_mat=L_mat_long.reshape(n,len(f))
-    f[f<0]=0
-    f=f+10e-3
+    f[f <= 0] = 1e-6
     val=np.log(np.dot(L_mat,f))
     return -sum(val)/n + alpha*step**3*sum(f**2)+alpha*step**3*norm_fprime_3d(f,step)
 
@@ -1785,7 +1785,7 @@ def jac_sobolev_3d(f,alpha,n,L_mat_long,step):
     """ This function computes the value of the jacobian of the functional with the H1 penalty for
     the 3-d implementation of the method.
     """
-    f[f<0]=1e-6
+    f[f <=0] = 1e-6
     L_mat=L_mat_long.reshape(n,len(f))
     denom=np.dot(L_mat,f)
     val=L_mat.T/denom
@@ -1795,7 +1795,7 @@ def norm_sq_3d(f,alpha,n,L_mat_long,step):
     """ This function comptues the value of the functional with the squared L2 norm penalty for the 3-d 
     implementation of the method."""
     L_mat=L_mat_long.reshape(n,len(f))
-    f[f<0]=1e-6
+    f[f <=0] = 1e-6
     val=np.log(np.dot(L_mat,f))
     return -sum(val)/n+ alpha*step**3*sum(f**2)
 
@@ -1803,7 +1803,7 @@ def entropy_3d(f,alpha,n,L_mat_long,step):
     """ This function comptues the value of the functional with the entropy penalty for the 3-d 
     implementation of the method."""
     L_mat=L_mat_long.reshape(n,len(f))
-    f[f<0]=1e-6
+    f[f <=0] = 1e-6
     val=np.log(np.dot(L_mat,f))
     return -sum(val)/n + alpha*step**3*sum(f*np.log(f))
 
@@ -1812,7 +1812,7 @@ def jac_likelihood_3d(f,n,L_mat_long):
     """ This function computes the jacobian of the regularization
     functional without any penalty term.
     """
-    f[f < 0] = 1e-6
+    f[f <=0] = 1e-6
     L_mat=L_mat_long.reshape(n,len(f))
     denom=np.dot(L_mat,f)
     val=L_mat.T/denom
@@ -1823,7 +1823,7 @@ def jac_norm_sq_3d(f,alpha,n,L_mat_long,step):
     """ This function computes the value of the jacobian of the functional with the squared L2 norm penalty for
     the 3-d implementation of the method.
     """
-    f[f < 0] = 1e-6
+    f[f <=0] = 1e-6
     L_mat=L_mat_long.reshape(n,len(f))
     denom=np.dot(L_mat,f)
     val=L_mat.T/denom
@@ -1834,7 +1834,7 @@ def jac_entropy_3d(f,alpha,n,L_mat_long,step):
     the 3-d implementation of the method.
     """
     L_mat=L_mat_long.reshape(n,len(f))
-    f[f<0]=1e-6
+    f[f <=0] = 1e-6
     denom=np.dot(L_mat,f)
     val=L_mat.T/denom
     return -val.T.sum(axis=0)/n+alpha*step**3*(np.log(f)+1)
@@ -1891,6 +1891,7 @@ def rmle_3d(functional,alpha,tmat,shift=None,k=None,jacobian=None,initial_guess=
     trans_matrix_long = np.ravel(tmat.Tmat)
     trans_matrix = tmat.Tmat
     step_size = tmat.grid.step
+    scaled_steps = tmat.grid.scaled_steps
     sample = tmat.sample.copy()
     lepskii_matches = ['lep','lepskii','lepskii\'s principle', 'lp']
     cv_matches = ['cv','cross','cross val', 'validation','crossvalidation','cross-validation']
@@ -1924,7 +1925,7 @@ Try to supply any of the accepted functional values: {likelihood_3d, norm_sq_3d,
         hessian_method = hessian_method
         
     if not constraints:
-        linear_constraint=scop.LinearConstraint([step_size**3]*len(initial_guess),[1],[1])
+        linear_constraint=scop.LinearConstraint([np.prod(scaled_steps)]*len(initial_guess),[1],[1])
         constraints = linear_constraint
         
     else:
